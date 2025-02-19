@@ -325,12 +325,22 @@ ppgasp <- function(design, response,trend=matrix(1,dim(response)[1],1),zero.mean
           if(method=='post_mode'){
             if(prior_choice=='ref_approx'){####this one can be with nugget or without the nugget
               #  if (requireNamespace("lbfgs", quietly = TRUE)) {
-              tt_all <- try(nloptr::lbfgs(ini_value, neg_log_marginal_post_approx_ref_ppgasp,
-                                          neg_log_marginal_post_approx_ref_deriv_ppgasp,nugget=nugget, nugget.est=model@nugget.est,
+              if(vecchia){
+                tt_all <- try(nloptr::lbfgs(ini_value, neg_log_marginal_post_approx_ref_ppgasp,
+                                            nugget=nugget, nugget.est=model@nugget.est,
+                                            R0=model@R0,X=model@X, zero_mean=model@zero_mean,output=model@output, CL=model@CL, a=a,b=b,
+                                            kernel_type=kernel_type_num,alpha=model@alpha,
+                                            vecchia=vecchia,locs=locs,NNarray=NNarray,lower=model@LB,
+                                            nl.info = FALSE, control = list(maxeval=max_eval)),TRUE)
+              }else{
+                tt_all <- try(nloptr::lbfgs(ini_value, neg_log_marginal_post_approx_ref_ppgasp,
+                                          neg_log_marginal_post_approx_ref_deriv_ppgasp,
+                                          nugget=nugget, nugget.est=model@nugget.est,
                                           R0=model@R0,X=model@X, zero_mean=model@zero_mean,output=model@output, CL=model@CL, a=a,b=b,
                                           kernel_type=kernel_type_num,alpha=model@alpha,
                                           vecchia=vecchia,locs=locs,NNarray=NNarray,lower=model@LB,
                                           nl.info = FALSE, control = list(maxeval=max_eval)),TRUE)
+              }
 
               #   }
             }else if(prior_choice=='ref_xi'|prior_choice=='ref_gamma'){####this needs to be revised

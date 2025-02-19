@@ -162,6 +162,7 @@ neg_log_marginal_lik <- function(param,nugget, nugget.est,R0,X,zero_mean,output,
 neg_log_marginal_post_approx_ref_ppgasp <- function(param,nugget, nugget.est,R0,X,zero_mean,output,CL,a,b,kernel_type,alpha,vecchia=F,locs=NA,NNarray=NA) {
   #####this has mean X, we should also include the case where X is not zero
   #####
+  # if vecchia is true, this function returns both the value and the gradient
   if(vecchia){
     # vecchia and RobusGaSP have different ways of inputting range parameters
     rp=1/exp(param)
@@ -172,9 +173,22 @@ neg_log_marginal_post_approx_ref_ppgasp <- function(param,nugget, nugget.est,R0,
       rp=c(rp[1:(length(param)-1)], exp(param[length(param)]))
     }
     if(zero_mean == "Yes"){
-      lml=GpGp2::vecchia_meanzero_loglik(c(var_y,rp),"matern15_scaledim",output,locs,NNarray)$loglik
+      vecchia_result=GpGp2::vecchia_meanzero_loglik_grad_info(c(var_y,rp),"matern15_scaledim",output,X,locs,NNarray)
+      lml=vecchia_result$loglik
+      lml_dev=vecchia_result$grad[2:(1+length(param))]
     }else if(zero_mean == "No"){
-      lml=GpGp2::vecchia_profbeta_loglik(c(var_y,rp),"matern15_scaledim",output,X,locs,NNarray)$loglik
+      vecchia_result=GpGp2::vecchia_profbeta_loglik_grad_info(c(var_y,rp),"matern15_scaledim",output,X,locs,NNarray)
+      lml=vecchia_result$loglik
+      lml_dev=vecchia_result$grad[2:(1+length(param))]
+    }
+    # GpGp2 computes the gradient with respect to range.par not inverse range.par
+    # as a result, we need to multiply by (-range.par^2) to cancel out the chain rule
+    # this ensures that the output of this function feeds gradient wrt inverse range.par
+    # additionally, we need to multiply by the var(y) to account for the Vecchia gradient using a different covariance function
+    if(!nugget.est){
+      lml_dev = lml_dev*(-rp[1:(length(rp)-1)]^2)
+    }else{
+      lml_dev = lml_dev*c(-rp[1:(length(rp)-1)]^2, var_y)
     }
   }else{
     lml=log_marginal_lik_ppgasp(param,nugget,nugget.est,R0,X,zero_mean,output,kernel_type,alpha);
@@ -183,7 +197,14 @@ neg_log_marginal_post_approx_ref_ppgasp <- function(param,nugget, nugget.est,R0,
   #print(param)
   #print(-(lml+lp))
   
-  -(lml+lp)
+  # return both objective and gradient at the same time
+  if(vecchia){
+    lp_dev=log_approx_ref_prior_deriv(param,nugget,nugget.est,CL,a,b)
+    value_and_grad=list("objective"=-(lml+lp), "gradient"=-(lml_dev+lp_dev)*exp(param))
+    return(value_and_grad)
+  }else{
+    return(-(lml+lp))
+  }
   
 }
 
@@ -281,7 +302,7 @@ neg_log_marginal_lik_deriv<- function(param,nugget,nugget.est,R0,X,zero_mean,out
 
 
 #######################ppgasp
-neg_log_marginal_post_approx_ref_deriv_ppgasp<- function(param,nugget,nugget.est,R0,X,zero_mean,output,CL,a,b,kernel_type,alpha,vecchia=F,locs=NA,NNarray=NA) {
+neg_log_marginal_post_approx_ref_deriv_ppgasp<- function(param,nugget,nugget.est,R0,X,zero_mean,output,CL,a,b,kernel_type,alpha,vecchia=F,locs=NA,NNarray=NA,vecchia_gradient=NA) {
   if(vecchia){
     # vecchia and RobusGaSP have different ways of inputting range parameters
     rp=1/exp(param)
