@@ -51,17 +51,17 @@ using namespace Rcpp;
 List vecchia_profbeta_loglik_grad_info( 
     NumericVector covparms, 
     StringVector covfun_name,
-    NumericVector y,
+    NumericMatrix y,
     NumericMatrix X,
     const NumericMatrix locs,
     NumericMatrix NNarray ){
     
     NumericVector ll(1);
     NumericVector grad( covparms.length() );
-    NumericVector betahat( X.ncol() );
+    NumericMatrix betahat( X.ncol(), y.ncol() );
     NumericMatrix info( covparms.length(), covparms.length() );
     NumericMatrix betainfo( X.ncol(), X.ncol() );
-
+    
     // this function calls arma_onepass_compute_pieces
     // then synthesizes the result into loglik, beta, grad, info, betainfo
     synthesize(covparms, covfun_name, locs, NNarray, y, X,
@@ -110,17 +110,17 @@ List vecchia_profbeta_loglik_grad_info(
 List vecchia_profbeta_loglik( 
     NumericVector covparms, 
     StringVector covfun_name,
-    NumericVector y,
+    NumericMatrix y,
     NumericMatrix X,
     const NumericMatrix locs,
     NumericMatrix NNarray ){
     
     NumericVector ll(1);
     NumericVector grad( covparms.length() );
-    NumericVector betahat( X.ncol() );
+    NumericMatrix betahat( X.ncol(), y.ncol() );
     NumericMatrix info( covparms.length(), covparms.length() );
     NumericMatrix betainfo( X.ncol(), X.ncol() );
-
+    Rcout << "You are in vecchia_profbeta_loglik (no gradient)" << endl;
     // this function calls arma_onepass_compute_pieces
     // then synthesizes the result into loglik, beta, grad, info, betainfo
     synthesize(covparms, covfun_name, locs, NNarray, y, X,
@@ -171,14 +171,14 @@ List vecchia_profbeta_loglik(
 List vecchia_meanzero_loglik_grad_info(
    NumericVector covparms,
    StringVector covfun_name,
-   NumericVector y,
+   NumericMatrix y,
    NumericMatrix X,
    const NumericMatrix locs,
    NumericMatrix NNarray ){
 
  NumericVector ll(1);
  NumericVector grad( covparms.length() );
- NumericVector betahat( X.ncol() );
+ NumericMatrix betahat( X.ncol(), y.ncol() );
  NumericMatrix info( covparms.length(), covparms.length() );
  NumericMatrix betainfo( X.ncol(), X.ncol() );
 
@@ -233,14 +233,14 @@ List vecchia_meanzero_loglik_grad_info(
 List vecchia_meanzero_loglik( 
     NumericVector covparms, 
     StringVector covfun_name,
-    NumericVector y,
+    NumericMatrix y,
     const NumericMatrix locs,
     NumericMatrix NNarray ){
     
     NumericMatrix X(1,1);
     NumericVector ll(1);
     NumericVector grad( covparms.length() );
-    NumericVector betahat( X.ncol() );
+    NumericMatrix betahat( X.ncol(), y.ncol() );
     //NumericVector betahat;
     NumericMatrix info( covparms.length(), covparms.length() );
     NumericMatrix betainfo( X.ncol(), X.ncol() );
