@@ -6,6 +6,7 @@
 #include <iostream>
 #include <vector>
 #include "onepass.h"
+
 //[[Rcpp::depends(RcppArmadillo)]]
 //[[Rcpp::depends(BH)]]
 
@@ -55,15 +56,14 @@ List vecchia_profbeta_loglik_grad_info(
     NumericMatrix X,
     const NumericMatrix locs,
     NumericMatrix NNarray ){
-    
     NumericVector ll(1);
     NumericVector grad( covparms.length() );
     NumericMatrix betahat( X.ncol(), y.ncol() );
     NumericMatrix info( covparms.length(), covparms.length() );
     NumericMatrix betainfo( X.ncol(), X.ncol() );
-    
     // this function calls arma_onepass_compute_pieces
     // then synthesizes the result into loglik, beta, grad, info, betainfo
+
     synthesize(covparms, covfun_name, locs, NNarray, y, X,
         &ll, &betahat, &grad, &info, &betainfo, true, true 
     );

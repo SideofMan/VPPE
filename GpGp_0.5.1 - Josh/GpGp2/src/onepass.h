@@ -3,6 +3,8 @@
 
 #include <RcppArmadillo.h>
 #include <string>
+#include <chrono>
+#include <thread>
 //[[Rcpp::depends(RcppArmadillo)]]
 
 #include "covmatrix_funs.h"
@@ -13,6 +15,7 @@
 
 using namespace Rcpp;
 using namespace arma;
+using namespace std::chrono_literals;
 
 arma::vec forward_solve( arma::mat cholmat, arma::vec b ){
 
@@ -225,7 +228,7 @@ void compute_pieces(
     int grad_info
 ){
     // data dimensions
-    int n = y.n_elem;
+    int n = y.n_rows;
     int m = NNarray.n_cols;
     int p = X.n_cols;
     int nparms = covparms.n_elem;
@@ -245,22 +248,20 @@ void compute_pieces(
     cube (*p_d_covfun[1])(arma::vec, arma::mat);
     get_covfun(covfun_name_string, p_covfun, p_d_covfun);
     
-
 #pragma omp parallel 
 {   
     arma::mat l_XSX = arma::mat(p, p, fill::zeros);
-    arma::vec l_ySX = arma::mat(p, k, fill::zeros);
+    arma::mat l_ySX = arma::mat(p, k, fill::zeros);
     arma::vec l_ySy = arma::vec(k, fill::zeros);
     double l_logdet = 0.0;
     arma::cube l_dXSX = arma::cube(p,p, nparms, fill::zeros);
     arma::cube l_dySX = arma::cube(p,k, nparms, fill::zeros);
-    arma::vec l_dySy = arma::mat(nparms, k, fill::zeros);
+    arma::mat l_dySy = arma::mat(nparms, k, fill::zeros);
     arma::vec l_dlogdet = arma::vec(nparms, fill::zeros);
     arma::mat l_ainfo = arma::mat(nparms, nparms, fill::zeros);
 
     #pragma omp for	    
     for(int i=0; i<n; i++){
-    
         int bsize = std::min(i+1,m);
 
 	//std::vector<std::chrono::steady_clock::time_point> tt;
@@ -278,10 +279,9 @@ void compute_pieces(
                 for(int k=0;k<p;k++){ X0(bsize-1-j,k) = X( NNarray(i,j)-1, k ); } 
             }
         }
-        
         // compute covariance matrix and derivatives and take cholesky
         arma::mat covmat = p_covfun[0]( covparms, locsub );
-	
+	      
         arma::cube dcovmat;
         // if(grad_info){ 
         //     dcovmat = p_d_covfun[0]( covparms, locsub ); 
@@ -294,7 +294,6 @@ void compute_pieces(
             dcovmat = p_d_covfun[0]( covparms, locsub );
           }
         }
-        
         arma::mat cholmat = eye( size(covmat) );
         chol( cholmat, covmat, "lower" );
         
@@ -320,24 +319,21 @@ void compute_pieces(
             //LiX0 = solve( trimatl(cholmat), X0 );
             LiX0 = forward_solve_mat( cholmat, X0 );
         }
-
         //arma::vec Liy0 = solve( trimatl(cholmat), ysub );
         arma::mat Liy0 = forward_solve_mat( cholmat, ysub );
         // loglik objects
-        l_logdet += 2.0*std::log( as_scalar(cholmat(i2,i2)) ); 
-        l_ySy +=    pow( Liy0.rows(i2), 2 );
+        l_logdet += 2.0*std::log( as_scalar(cholmat(i2,i2)) );
+        l_ySy += arma::vec(arma::square( Liy0.rows(i2) ).t()); // turn row vector into arma::vec
         if(profbeta){
             l_XSX +=   LiX0.rows(i2).t() * LiX0.rows(i2);
-            l_ySX += ( Liy0.rows(i2) * LiX0.rows(i2) ).t();
+            l_ySX += ( Liy0.rows(i2).t() * LiX0.rows(i2) ).t();
         }
-
         if( grad_info ){
         // gradient objects
         // LidSLi3 is last column of Li * (dS_j) * Lit for 1 parameter i
         // LidSLi2 stores these columns in a matrix for all parameters
         arma::mat LidSLi2(bsize,nparms);
         if(cond){ // if we condition on anything
-            
             for(int j=0; j<nparms; j++){
                 // compute last column of Li * (dS_j) * Lit
                 //arma::vec LidSLi3 = solve( trimatl(cholmat), dcovmat.slice(j) * choli2 );
@@ -349,12 +345,20 @@ void compute_pieces(
                 // bottom-right corner gets double counted, so need to subtract it off
                 (l_dXSX).slice(j) += v1 * LiX0.rows(i2) + ( v1 * LiX0.rows(i2) ).t() - 
                     as_scalar(LidSLi3(i2)) * ( LiX0.rows(i2).t() * LiX0.rows(i2) );
-                (l_dySy).row(j) += 2.0 * s1 * Liy0.rows(i2)  - 
-                    LidSLi3(i2) * Liy0.rows(i2) * Liy0.rows(i2);
+                for(int loc_i=0; loc_i<k; loc_i++){
+                  arma::mat s1 = Liy0.col(loc_i).t() * LidSLi3;
+                  (l_dySy)(j,loc_i) += as_scalar(2.0 * s1 * Liy0(i2,loc_i)  -
+                    LidSLi3(i2) * Liy0(i2,loc_i) * Liy0(i2,loc_i));
+                  
+                  (l_dySX).slice(j).col(loc_i) += (  s1 * LiX0.rows(i2) + ( v1 * Liy0(i2,loc_i) ).t() -
+                    as_scalar( LidSLi3(i2) ) * Liy0(i2,loc_i).t() * LiX0.rows(i2)).t();
+                }
+                // (l_dySy).row(j) += 2.0 * s1 * Liy0.rows(i2)  - 
+                //     LidSLi3(i2) * Liy0.rows(i2) * Liy0.rows(i2);
                 // (l_dySX).slice(j) += (  s1 * LiX0.rows(i2) + ( v1 * Liy0.rows(i2) ).t() -  
                 //   as_scalar( LidSLi3(i2) ) * LiX0.rows(i2) * Liy0.rows(i2)).t();
-                (l_dySX).slice(j) += (  s1 * LiX0.rows(i2) + ( v1 * Liy0.rows(i2) ).t() -  
-                  as_scalar( LidSLi3(i2) ) * Liy0.rows(i2).t() * LiX0.rows(i2)).t();
+                // (l_dySX).slice(j) += (  s1 * LiX0.rows(i2) + ( v1 * Liy0.rows(i2) ).t() -  
+                //   as_scalar( LidSLi3(i2) ) * Liy0.rows(i2).t() * LiX0.rows(i2)).t();
                 (l_dlogdet)(j) += as_scalar( LidSLi3(i2) );
                 // store last column of Li * (dS_j) * Lit
                 LidSLi2.col(j) = LidSLi3;
@@ -375,8 +379,10 @@ void compute_pieces(
                 arma::mat LidSLi = forward_solve_mat( cholmat, dcovmat.slice(j) );
                 //LidSLi = solve( trimatl(cholmat), LidSLi.t() );
                 LidSLi = forward_solve_mat( cholmat, LidSLi.t() );
-                (l_dXSX).slice(j) += LiX0.t() *  LidSLi * LiX0; 
-                (l_dySy).row(j) += Liy0.t() * LidSLi * Liy0;
+                (l_dXSX).slice(j) += LiX0.t() *  LidSLi * LiX0;
+                for(int loc_i=0; loc_i<k; loc_i++){
+                  (l_dySy)(j,loc_i) += as_scalar((Liy0.col(loc_i)).t() * LidSLi * (Liy0.col(loc_i)));
+                }
                 (l_dySX).slice(j) += ( ( Liy0.t() * LidSLi ) * LiX0 ).t();
                 (l_dlogdet)(j) += trace( LidSLi );
                 LidSLi2.col(j) = LidSLi;
@@ -665,7 +671,7 @@ void synthesize(
     bool profbeta,
     bool grad_info ){
     // data dimensions
-    int n = y.length();
+    int n = y.nrow();
     //int m = NNarray.ncol();
     int p = X.ncol();
     int nparms = covparms.length();
@@ -728,8 +734,13 @@ void synthesize(
     }
     }
     // get sigmahatsq
-    arma::vec sig2 = ( ySy - 2.0*( ySX.t() * abeta ) + 
-        ( abeta.t() * XSX * abeta ) )/n;
+    arma::vec sig2 = arma::vec(k, fill::zeros);
+    for(int loc_i=0; loc_i < k; loc_i++){
+      sig2(loc_i) += as_scalar( (ySy(loc_i) - 2.0*( ySX.col(loc_i).t() * abeta.col(loc_i) ) +
+        ( abeta.col(loc_i).t() * XSX * abeta.col(loc_i) ) )/n );
+    }
+    // arma::vec sig2 = ( ySy - 2.0*( ySX.t() * abeta ) + 
+    //     ( abeta.t() * XSX * abeta ) )/n;
     // loglikelihood
     // (*ll)(0) = -0.5*( n*std::log(2.0*M_PI) + logdet + n*sig2 );
     
@@ -745,9 +756,9 @@ void synthesize(
       double sign;
       arma::log_det(logdet2, sign, cholmat2);
       
-      (*ll)(0) = -0.5*k*(logdet + 2.0*logdet2 + (n-p)*log_S_2 );
+      (*ll)(0) = -0.5*(k*(logdet + 2.0*logdet2) + (n-p)*log_S_2 );
     }else{
-      (*ll)(0) = -0.5*k*(logdet + n*log_S_2 );
+      (*ll)(0) = -0.5*(k*logdet + n*log_S_2 );
     }
 
     if(profbeta){
@@ -779,7 +790,7 @@ void synthesize(
         for(int loc_i=0;loc_i<k;loc_i++){
           double dsig2 = 0;
           dsig2 += 0.5*dySy(j,loc_i);
-          dsig2 -= 1.0*as_scalar( abeta.t() * dySX.slice(j).col(loc_i) );
+          dsig2 -= 1.0*as_scalar( abeta.col(loc_i).t() * dySX.slice(j).col(loc_i) );
           dsig2 += 1.0*as_scalar( ySX.col(loc_i).t() * dbeta.slice(j).col(loc_i) );
           dsig2 += 0.5*as_scalar( abeta.col(loc_i).t() * dXSX.slice(j) * abeta.col(loc_i) );
           dsig2 -= 1.0*as_scalar( abeta.col(loc_i).t() * XSX * dbeta.slice(j).col(loc_i) );
@@ -789,7 +800,6 @@ void synthesize(
       }else{
         for(int loc_i=0;loc_i<k;loc_i++){
           double dsig2 = 0;
-          double ratio = 0;
           dsig2 += 0.5*dySy(j,loc_i);
           ratio += dsig2 / ( n * sig2(loc_i) );
         }

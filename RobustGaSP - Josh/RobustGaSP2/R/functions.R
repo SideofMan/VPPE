@@ -166,7 +166,7 @@ neg_log_marginal_post_approx_ref_ppgasp <- function(param,nugget, nugget.est,R0,
   if(vecchia){
     # vecchia and RobusGaSP have different ways of inputting range parameters
     rp=1/exp(param)
-    var_y=var(output)
+    var_y=var(output)[1]
     if(!nugget.est){
       rp=c(rp,nugget)
     }else{
@@ -306,7 +306,7 @@ neg_log_marginal_post_approx_ref_deriv_ppgasp<- function(param,nugget,nugget.est
   if(vecchia){
     # vecchia and RobusGaSP have different ways of inputting range parameters
     rp=1/exp(param)
-    var_y=var(output)
+    var_y=var(output)[1]
     if(!nugget.est){
       rp=c(rp,nugget)
     }else{

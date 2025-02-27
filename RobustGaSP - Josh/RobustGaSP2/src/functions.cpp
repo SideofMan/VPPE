@@ -1139,7 +1139,6 @@ double log_marginal_lik_ppgasp(const Eigen::VectorXd &  param,double nugget, con
     for(int loc_i=0;loc_i<k;loc_i++){
       log_S_2=log_S_2+log((yt_R_inv.row(loc_i)*output.col(loc_i))(0,0));
     }
-    
     //double log_S_2=log(S_2);
     
     return (-k*(L.diagonal().array().log().matrix().sum())-(num_obs)/2.0*log_S_2);
