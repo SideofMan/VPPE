@@ -883,14 +883,14 @@ BEGIN_RCPP
 END_RCPP
 }
 // vecchia_profbeta_loglik_grad_info
-List vecchia_profbeta_loglik_grad_info(NumericVector covparms, StringVector covfun_name, NumericVector y, NumericMatrix X, const NumericMatrix locs, NumericMatrix NNarray);
+List vecchia_profbeta_loglik_grad_info(NumericVector covparms, StringVector covfun_name, NumericMatrix y, NumericMatrix X, const NumericMatrix locs, NumericMatrix NNarray);
 RcppExport SEXP _GpGp2_vecchia_profbeta_loglik_grad_info(SEXP covparmsSEXP, SEXP covfun_nameSEXP, SEXP ySEXP, SEXP XSEXP, SEXP locsSEXP, SEXP NNarraySEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< NumericVector >::type covparms(covparmsSEXP);
     Rcpp::traits::input_parameter< StringVector >::type covfun_name(covfun_nameSEXP);
-    Rcpp::traits::input_parameter< NumericVector >::type y(ySEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type y(ySEXP);
     Rcpp::traits::input_parameter< NumericMatrix >::type X(XSEXP);
     Rcpp::traits::input_parameter< const NumericMatrix >::type locs(locsSEXP);
     Rcpp::traits::input_parameter< NumericMatrix >::type NNarray(NNarraySEXP);
@@ -899,14 +899,14 @@ BEGIN_RCPP
 END_RCPP
 }
 // vecchia_profbeta_loglik
-List vecchia_profbeta_loglik(NumericVector covparms, StringVector covfun_name, NumericVector y, NumericMatrix X, const NumericMatrix locs, NumericMatrix NNarray);
+List vecchia_profbeta_loglik(NumericVector covparms, StringVector covfun_name, NumericMatrix y, NumericMatrix X, const NumericMatrix locs, NumericMatrix NNarray);
 RcppExport SEXP _GpGp2_vecchia_profbeta_loglik(SEXP covparmsSEXP, SEXP covfun_nameSEXP, SEXP ySEXP, SEXP XSEXP, SEXP locsSEXP, SEXP NNarraySEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< NumericVector >::type covparms(covparmsSEXP);
     Rcpp::traits::input_parameter< StringVector >::type covfun_name(covfun_nameSEXP);
-    Rcpp::traits::input_parameter< NumericVector >::type y(ySEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type y(ySEXP);
     Rcpp::traits::input_parameter< NumericMatrix >::type X(XSEXP);
     Rcpp::traits::input_parameter< const NumericMatrix >::type locs(locsSEXP);
     Rcpp::traits::input_parameter< NumericMatrix >::type NNarray(NNarraySEXP);
@@ -915,14 +915,14 @@ BEGIN_RCPP
 END_RCPP
 }
 // vecchia_meanzero_loglik_grad_info
-List vecchia_meanzero_loglik_grad_info(NumericVector covparms, StringVector covfun_name, NumericVector y, NumericMatrix X, const NumericMatrix locs, NumericMatrix NNarray);
+List vecchia_meanzero_loglik_grad_info(NumericVector covparms, StringVector covfun_name, NumericMatrix y, NumericMatrix X, const NumericMatrix locs, NumericMatrix NNarray);
 RcppExport SEXP _GpGp2_vecchia_meanzero_loglik_grad_info(SEXP covparmsSEXP, SEXP covfun_nameSEXP, SEXP ySEXP, SEXP XSEXP, SEXP locsSEXP, SEXP NNarraySEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< NumericVector >::type covparms(covparmsSEXP);
     Rcpp::traits::input_parameter< StringVector >::type covfun_name(covfun_nameSEXP);
-    Rcpp::traits::input_parameter< NumericVector >::type y(ySEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type y(ySEXP);
     Rcpp::traits::input_parameter< NumericMatrix >::type X(XSEXP);
     Rcpp::traits::input_parameter< const NumericMatrix >::type locs(locsSEXP);
     Rcpp::traits::input_parameter< NumericMatrix >::type NNarray(NNarraySEXP);
@@ -931,14 +931,14 @@ BEGIN_RCPP
 END_RCPP
 }
 // vecchia_meanzero_loglik
-List vecchia_meanzero_loglik(NumericVector covparms, StringVector covfun_name, NumericVector y, const NumericMatrix locs, NumericMatrix NNarray);
+List vecchia_meanzero_loglik(NumericVector covparms, StringVector covfun_name, NumericMatrix y, const NumericMatrix locs, NumericMatrix NNarray);
 RcppExport SEXP _GpGp2_vecchia_meanzero_loglik(SEXP covparmsSEXP, SEXP covfun_nameSEXP, SEXP ySEXP, SEXP locsSEXP, SEXP NNarraySEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< NumericVector >::type covparms(covparmsSEXP);
     Rcpp::traits::input_parameter< StringVector >::type covfun_name(covfun_nameSEXP);
-    Rcpp::traits::input_parameter< NumericVector >::type y(ySEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type y(ySEXP);
     Rcpp::traits::input_parameter< const NumericMatrix >::type locs(locsSEXP);
     Rcpp::traits::input_parameter< NumericMatrix >::type NNarray(NNarraySEXP);
     rcpp_result_gen = Rcpp::wrap(vecchia_meanzero_loglik(covparms, covfun_name, y, locs, NNarray));

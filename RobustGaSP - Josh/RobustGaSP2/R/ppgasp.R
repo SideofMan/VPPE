@@ -19,7 +19,6 @@ ppgasp <- function(design, response,trend=matrix(1,dim(response)[1],1),zero.mean
                   alpha=rep(1.9,dim(as.matrix(design))[2]),lower_bound=T,max_eval=max(30,20+5*dim(design)[2]),
                   initial_values=NA,num_initial_values=2,vecchia=F,locs=NA,NNarray=NA){
   
-
   if (!is.logical(nugget.est) && length(nugget.est) != 1){
     stop("nugget.est should be boolean (either T or F) \n")
   }
@@ -239,7 +238,6 @@ ppgasp <- function(design, response,trend=matrix(1,dim(response)[1],1),zero.mean
     
    
       COND_NUM_UB = 10^{16}  ###maximum condition number, this might be a little too large
-      
       if(lower_bound==T){
       LB_all = optimize(search_LB_prob, interval=c(-5,12), maximum = FALSE, R0=model@R0,COND_NUM_UB= COND_NUM_UB,
                         p=model@p,kernel_type=kernel_type_num,alpha=model@alpha,nugget=nugget) ###find a lower bound for parameter beta
@@ -260,8 +258,8 @@ ppgasp <- function(design, response,trend=matrix(1,dim(response)[1],1),zero.mean
           LB = c(LB, -log(0.1)/((max(model@input[,i_LB])-min(model@input[,i_LB]))*model@p))   
         }
         
-      }
-   
+     }
+      
     if(lower_bound==T){
       if(model@nugget.est){
         model@LB=c(LB,-Inf)   
@@ -275,8 +273,7 @@ ppgasp <- function(design, response,trend=matrix(1,dim(response)[1],1),zero.mean
         model@LB=rep(-Inf,model@p)
       }
     }
-    
-    cat('The upper bounds of the range parameters are',1/exp(model@LB),'\n')
+    cat('The upper bounds of the range parameters are',1/exp(model@LB),'\n') # UNCOMMENT
     
     ############################the lower bound might be needed to discuss
     
@@ -320,8 +317,8 @@ ppgasp <- function(design, response,trend=matrix(1,dim(response)[1],1),zero.mean
             ini_value=initial_values[i_ini,1:model@p]
             ###without the nugget
           }
-          cat('The initial values of range parameters are', 1/exp(ini_value[1:model@p]),'\n')
-          cat('Start of the optimization ', i_ini,' : \n')
+          cat('The initial values of range parameters are', 1/exp(ini_value[1:model@p]),'\n') # UNCOMMENT
+          cat('Start of the optimization ', i_ini,' : \n') # UNCOMMENT
           if(method=='post_mode'){
             if(prior_choice=='ref_approx'){####this one can be with nugget or without the nugget
               #  if (requireNamespace("lbfgs", quietly = TRUE)) {
