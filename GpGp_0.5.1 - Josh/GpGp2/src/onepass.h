@@ -345,14 +345,24 @@ void compute_pieces(
                 // bottom-right corner gets double counted, so need to subtract it off
                 (l_dXSX).slice(j) += v1 * LiX0.rows(i2) + ( v1 * LiX0.rows(i2) ).t() - 
                     as_scalar(LidSLi3(i2)) * ( LiX0.rows(i2).t() * LiX0.rows(i2) );
-                for(int loc_i=0; loc_i<k; loc_i++){
-                  arma::mat s1 = Liy0.col(loc_i).t() * LidSLi3;
-                  (l_dySy)(j,loc_i) += as_scalar(2.0 * s1 * Liy0(i2,loc_i)  -
-                    LidSLi3(i2) * Liy0(i2,loc_i) * Liy0(i2,loc_i));
-                  
-                  (l_dySX).slice(j).col(loc_i) += (  s1 * LiX0.rows(i2) + ( v1 * Liy0(i2,loc_i) ).t() -
-                    as_scalar( LidSLi3(i2) ) * Liy0(i2,loc_i).t() * LiX0.rows(i2)).t();
-                }
+                
+                // This deals with multidimensionality with matrix multiplication (fast)
+                (l_dySy).row(j) += arma::sum( ( 2.0 * Liy0.t() * LidSLi3 % Liy0.rows(i2).t() -
+                  as_scalar(LidSLi3(i2)) * arma::square( Liy0.rows(i2).t() ) ), 1 ).t();
+
+                (l_dySX).slice(j) += ( Liy0.t() * LidSLi3 * LiX0.rows(i2) + ( v1 * Liy0.rows(i2) ).t() -
+                  as_scalar(LidSLi3(i2)) * Liy0.rows(i2).t() * LiX0.rows(i2)).t();
+                
+                // // This deals with multidimensionality with for loop (slow)
+                // for(int loc_i=0; loc_i<k; loc_i++){
+                //   arma::mat s1 = Liy0.col(loc_i).t() * LidSLi3;
+                //   (l_dySy)(j,loc_i) += as_scalar(2.0 * s1 * Liy0(i2,loc_i)  -
+                //     LidSLi3(i2) * Liy0(i2,loc_i) * Liy0(i2,loc_i));
+                // 
+                //   (l_dySX).slice(j).col(loc_i) += (  s1 * LiX0.rows(i2) + ( v1 * Liy0(i2,loc_i) ).t() -
+                //     as_scalar( LidSLi3(i2) ) * Liy0(i2,loc_i).t() * LiX0.rows(i2)).t();
+                // }
+                
                 // (l_dySy).row(j) += 2.0 * s1 * Liy0.rows(i2)  - 
                 //     LidSLi3(i2) * Liy0.rows(i2) * Liy0.rows(i2);
                 // (l_dySX).slice(j) += (  s1 * LiX0.rows(i2) + ( v1 * Liy0.rows(i2) ).t() -  
@@ -380,10 +390,17 @@ void compute_pieces(
                 //LidSLi = solve( trimatl(cholmat), LidSLi.t() );
                 LidSLi = forward_solve_mat( cholmat, LidSLi.t() );
                 (l_dXSX).slice(j) += LiX0.t() *  LidSLi * LiX0;
-                for(int loc_i=0; loc_i<k; loc_i++){
-                  (l_dySy)(j,loc_i) += as_scalar((Liy0.col(loc_i)).t() * LidSLi * (Liy0.col(loc_i)));
-                }
+                
+                // This deals with multidimensionality with matrix multiplication (fast)
+                (l_dySy).row(j) += arma::sum( Liy0.t() * LidSLi % Liy0.t(), 1).t();
                 (l_dySX).slice(j) += ( ( Liy0.t() * LidSLi ) * LiX0 ).t();
+                
+                // // This deals with multidimensionality with for loop (slow)
+                // for(int loc_i=0; loc_i<k; loc_i++){
+                //   (l_dySy)(j,loc_i) += as_scalar((Liy0.col(loc_i)).t() * LidSLi * (Liy0.col(loc_i)));
+                //   (l_dySX).slice(j).col(loc_i) += ( ( Liy0.col(loc_i).t() * LidSLi ) * LiX0 ).t();
+                // }
+                
                 (l_dlogdet)(j) += trace( LidSLi );
                 LidSLi2.col(j) = LidSLi;
             }
@@ -735,10 +752,19 @@ void synthesize(
     }
     // get sigmahatsq
     arma::vec sig2 = arma::vec(k, fill::zeros);
-    for(int loc_i=0; loc_i < k; loc_i++){
-      sig2(loc_i) += as_scalar( (ySy(loc_i) - 2.0*( ySX.col(loc_i).t() * abeta.col(loc_i) ) +
-        ( abeta.col(loc_i).t() * XSX * abeta.col(loc_i) ) )/n );
-    }
+    
+    // This deals with multidimensionality with matrix multiplication (fast)
+    sig2 += (ySy - arma::sum( 2.0*( ySX.t() % abeta.t() ) -
+      ( abeta.t() * XSX % abeta.t()), 1 ) )/n ;
+    // std::this_thread::sleep_for(1ms);
+    
+    // // This deals with multidimensionality with for loop (slow)
+    // for(int loc_i=0; loc_i < k; loc_i++){
+    //   sig2(loc_i) += as_scalar( (ySy(loc_i) - 2.0*( ySX.col(loc_i).t() * abeta.col(loc_i) ) +
+    //     ( abeta.col(loc_i).t() * XSX * abeta.col(loc_i) ) )/n );
+    // }
+    
+    // Old stuff
     // arma::vec sig2 = ( ySy - 2.0*( ySX.t() * abeta ) + 
     //     ( abeta.t() * XSX * abeta ) )/n;
     // loglikelihood
@@ -787,22 +813,37 @@ void synthesize(
       
       if(profbeta){
         (*grad)(j) += 0.5*k*dlogdet2(j);
-        for(int loc_i=0;loc_i<k;loc_i++){
-          double dsig2 = 0;
-          dsig2 += 0.5*dySy(j,loc_i);
-          dsig2 -= 1.0*as_scalar( abeta.col(loc_i).t() * dySX.slice(j).col(loc_i) );
-          dsig2 += 1.0*as_scalar( ySX.col(loc_i).t() * dbeta.slice(j).col(loc_i) );
-          dsig2 += 0.5*as_scalar( abeta.col(loc_i).t() * dXSX.slice(j) * abeta.col(loc_i) );
-          dsig2 -= 1.0*as_scalar( abeta.col(loc_i).t() * XSX * dbeta.slice(j).col(loc_i) );
-          ratio += dsig2 / ( n * sig2(loc_i) );
-        }
+        // This deals with multidimensionality with matrix multiplication (fast)
+        arma::vec dsig2 = arma::vec(k, fill::zeros);
+        dsig2 += 0.5*dySy.row(j).t() + arma::sum( - 1.0*abeta.t() % dySX.slice(j).t()
+                                                 + 1.0*ySX.t() % dbeta.slice(j).t()
+                                                 + 0.5*abeta.t() * dXSX.slice(j) % abeta.t()
+                                                 - 1.0*abeta.t() * XSX % dbeta.slice(j).t(), 1);
+        ratio += arma::sum( dsig2 / (n * sig2) );
+        
+        // // This deals with multidimensionality with for loop (slow)
+        // for(int loc_i=0;loc_i<k;loc_i++){
+        //   double dsig2 = 0;
+        //   dsig2 += 0.5*dySy(j,loc_i);
+        //   dsig2 -= 1.0*as_scalar( abeta.col(loc_i).t() * dySX.slice(j).col(loc_i) );
+        //   dsig2 += 1.0*as_scalar( ySX.col(loc_i).t() * dbeta.slice(j).col(loc_i) );
+        //   dsig2 += 0.5*as_scalar( abeta.col(loc_i).t() * dXSX.slice(j) * abeta.col(loc_i) );
+        //   dsig2 -= 1.0*as_scalar( abeta.col(loc_i).t() * XSX * dbeta.slice(j).col(loc_i) );
+        //   ratio += dsig2 / ( n * sig2(loc_i) );
+        // }
         (*grad)(j) += (n-p) * ratio;
       }else{
-        for(int loc_i=0;loc_i<k;loc_i++){
-          double dsig2 = 0;
-          dsig2 += 0.5*dySy(j,loc_i);
-          ratio += dsig2 / ( n * sig2(loc_i) );
-        }
+        // This deals with multidimensionality with matrix multiplication (fast)
+        arma::vec dsig2 = arma::vec(k, fill::zeros);
+        dsig2 += 0.5*dySy.row(j);
+        ratio += arma::sum( dsig2 / (n * sig2) );
+        
+        // // This deals with multidimensionality with for loop (slow)
+        // for(int loc_i=0;loc_i<k;loc_i++){
+        //   double dsig2 = 0;
+        //   dsig2 += 0.5*dySy(j,loc_i);
+        //   ratio += dsig2 / ( n * sig2(loc_i) );
+        // }
         (*grad)(j) += n * ratio;
       }
     }
