@@ -2,10 +2,12 @@
 #define ONEPASS_H
 
 #include <RcppArmadillo.h>
+#include <RcppEigen.h>
 #include <string>
 #include <chrono>
 #include <thread>
 //[[Rcpp::depends(RcppArmadillo)]]
+//[[Rcpp::depends(RcppEigen)]]
 
 #include "covmatrix_funs.h"
 
@@ -15,7 +17,9 @@
 
 using namespace Rcpp;
 using namespace arma;
+using namespace Eigen;
 using namespace std::chrono_literals;
+using myFloat = long double;
 
 arma::vec forward_solve( arma::mat cholmat, arma::vec b ){
 
@@ -24,7 +28,7 @@ arma::vec forward_solve( arma::mat cholmat, arma::vec b ){
     x(0) = b(0)/cholmat(0,0);
 
     for(int i=1; i<n; i++){
-        double dd = 0.0;
+        myFloat dd = 0.0;
         for(int j=0; j<i; j++){
             dd += cholmat(i,j)*x(j);
         }
@@ -43,7 +47,7 @@ arma::mat forward_solve_mat( arma::mat cholmat, arma::mat b ){
 
     for(int i=1; i<n; i++){
 	for(int k=0; k<p; k++){
-            double dd = 0.0;
+            myFloat dd = 0.0;
             for(int j=0; j<i; j++){
                 dd += cholmat(i,j)*x(j,k);
             }
@@ -60,7 +64,7 @@ arma::vec backward_solve( arma::mat lower, arma::vec b ){
     x(n-1) = b(n-1)/lower(n-1,n-1);
 
     for(int i=n-2; i>=0; i--){
-        double dd = 0.0;
+        myFloat dd = 0.0;
         for(int j=n-1; j>i; j--){
             dd += lower(j,i)*x(j);
         }
@@ -78,7 +82,7 @@ arma::mat backward_solve_mat( arma::mat cholmat, arma::mat b ){
 
     for(int i=n-2; i>=0; i--){
 	for(int k=0; k<p; k++){
-            double dd = 0.0;
+            myFloat dd = 0.0;
             for(int j=n-1; j>i; j--){
                 dd += cholmat(j,i)*x(j,k);
             }
@@ -105,7 +109,7 @@ arma::mat mychol( arma::mat A ){
     if( n > 1 ){
 	// second row
 	L(1,0) = A(1,0)/L(0,0);
-	double f = A(1,1) - L(1,0)*L(1,0);
+	myFloat f = A(1,1) - L(1,0)*L(1,0);
 	if( f < 0 ){
 	    pd = false;
 	    L(1,1) = 1.0;
@@ -119,14 +123,14 @@ arma::mat mychol( arma::mat A ){
     	        L(i,0) = A(i,0)/L(0,0);
     	        // middle entries in row i 
     	        for(uword j=1; j<i; j++){
-    	            double d = A(i,j);
+    	            myFloat d = A(i,j);
     	            for(uword k=0; k<j; k++){
     	        	d -= L(i,k)*L(j,k);
     	            }
     	            L(i,j) = d/L(j,j);
     	        }
 		// diagonal entry in row i
-    	        double e = A(i,i);
+    	        myFloat e = A(i,i);
     	        for(uword k=0; k<i; k++){
     	            e -= L(i,k)*L(i,k);
     	        }
@@ -161,7 +165,7 @@ arma::cube fast_d_wrapper_function(arma::vec covparms, arma::mat locs, arma::mat
     }
     
     int n = locs.n_rows;
-    double nugget = covparms( 0 )*covparms( dim + 1 );
+    myFloat nugget = covparms( 0 )*covparms( dim + 1 );
     
     // need the covariance matrix without nugget or variance
     R = (R - nugget*arma::mat(n,n,arma::fill::eye))/covparms(0);
@@ -173,7 +177,7 @@ arma::cube fast_d_wrapper_function(arma::vec covparms, arma::mat locs, arma::mat
       
       for(int i = 0; i < n; i++){
         for(int j = i; j < n; j++){
-          double abs_diff = std::abs(col_k(i) - col_k(j));
+          myFloat abs_diff = std::abs(col_k(i) - col_k(j));
           R0(i, j, k) = abs_diff;
           R0(j, i, k) = abs_diff;
         }
@@ -193,7 +197,7 @@ arma::cube fast_d_wrapper_function(arma::vec covparms, arma::mat locs, arma::mat
         arma::mat R0_k;
         R0_k = R0.slice(k-1);
         
-        const double sqrt_3 = sqrt(3.0);
+        const myFloat sqrt_3 = sqrt(3.0);
         arma::mat matOnes = arma::mat(n,n,arma::fill::ones);
         arma::mat part1 = sqrt_3*R0_k;
         arma::mat part2 = matOnes + sqrt_3*R0_k/covparms(k);
@@ -215,15 +219,15 @@ void compute_pieces(
     arma::mat NNarray,
     arma::mat y, 
     arma::mat X,
-    mat* XSX,
-    mat* ySX,
-    vec* ySy,
+    arma::mat* XSX,
+    arma::mat* ySX,
+    arma::vec* ySy,
     double* logdet,
-    cube* dXSX,
-    cube* dySX,
-    mat* dySy,
-    vec* dlogdet,
-    mat* ainfo,
+    arma::cube* dXSX,
+    arma::cube* dySX,
+    arma::mat* dySy,
+    arma::vec* dlogdet,
+    arma::mat* ainfo,
     int profbeta,
     int grad_info
 ){
@@ -244,8 +248,8 @@ void compute_pieces(
     /* p_covfun is an array of length 1. Its entry is a pointer to a function which takes
      in arma::vec and arma::mat and returns mat. p_d_covfun is analogous. This was a workaround for the solaris bug*/
 
-    mat (*p_covfun[1])(arma::vec, arma::mat);
-    cube (*p_d_covfun[1])(arma::vec, arma::mat);
+    arma::mat (*p_covfun[1])(arma::vec, arma::mat);
+    arma::cube (*p_d_covfun[1])(arma::vec, arma::mat);
     get_covfun(covfun_name_string, p_covfun, p_d_covfun);
     
 #pragma omp parallel 
@@ -253,7 +257,7 @@ void compute_pieces(
     arma::mat l_XSX = arma::mat(p, p, fill::zeros);
     arma::mat l_ySX = arma::mat(p, k, fill::zeros);
     arma::vec l_ySy = arma::vec(k, fill::zeros);
-    double l_logdet = 0.0;
+    myFloat l_logdet = 0.0;
     arma::cube l_dXSX = arma::cube(p,p, nparms, fill::zeros);
     arma::cube l_dySX = arma::cube(p,k, nparms, fill::zeros);
     arma::mat l_dySy = arma::mat(nparms, k, fill::zeros);
@@ -267,7 +271,6 @@ void compute_pieces(
 	//std::vector<std::chrono::steady_clock::time_point> tt;
 
 	//tt.push_back( std::chrono::steady_clock::now() );
-
         // first, fill in ysub, locsub, and X0 in reverse order
         arma::mat locsub(bsize, dim);
         arma::mat ysub(bsize, k);
@@ -281,7 +284,6 @@ void compute_pieces(
         }
         // compute covariance matrix and derivatives and take cholesky
         arma::mat covmat = p_covfun[0]( covparms, locsub );
-	      
         arma::cube dcovmat;
         // if(grad_info){ 
         //     dcovmat = p_d_covfun[0]( covparms, locsub ); 
@@ -296,7 +298,7 @@ void compute_pieces(
         }
         arma::mat cholmat = eye( size(covmat) );
         chol( cholmat, covmat, "lower" );
-        
+
         // i1 is conditioning set, i2 is response        
         //arma::span i1 = span(0,bsize-2);
         arma::span i2 = span(bsize-1,bsize-1);
@@ -373,7 +375,6 @@ void compute_pieces(
                 // store last column of Li * (dS_j) * Lit
                 LidSLi2.col(j) = LidSLi3;
             }
-
             // fisher information object
             // bottom right corner gets double counted, so subtract it off
             for(int i=0; i<nparms; i++){ for(int j=0; j<i+1; j++){
@@ -404,7 +405,6 @@ void compute_pieces(
                 (l_dlogdet)(j) += trace( LidSLi );
                 LidSLi2.col(j) = LidSLi;
             }
-            
             // fisher information object
             for(int i=0; i<nparms; i++){ for(int j=0; j<i+1; j++){
                 (l_ainfo)(i,j) += 0.5*accu( LidSLi2.col(i) % LidSLi2.col(j) ); 
@@ -422,7 +422,6 @@ void compute_pieces(
 
 
     }
-  
 #pragma omp critical
 {
     *XSX += l_XSX;
@@ -451,15 +450,15 @@ void compute_pieces_grouped(
     List NNlist,
     arma::vec y, 
     arma::mat X,
-    mat* XSX,
-    vec* ySX,
+    arma::mat* XSX,
+    arma::vec* ySX,
     double* ySy,
     double* logdet,
-    cube* dXSX,
-    mat* dySX,
-    vec* dySy,
-    vec* dlogdet,
-    mat* ainfo,
+    arma::cube* dXSX,
+    arma::mat* dySX,
+    arma::vec* dySy,
+    arma::vec* dlogdet,
+    arma::mat* ainfo,
     bool profbeta,
     bool grad_info
 ){
@@ -477,8 +476,8 @@ void compute_pieces_grouped(
     covfun_name_string = covfun_name[0];
     
     // assign covariance fun and derivative based on covfun_name_string
-    mat (*p_covfun[1])(arma::vec, arma::mat);
-    cube (*p_d_covfun[1])(arma::vec, arma::mat);
+    arma::mat (*p_covfun[1])(arma::vec, arma::mat);
+    arma::cube (*p_d_covfun[1])(arma::vec, arma::mat);
     get_covfun(covfun_name_string, p_covfun, p_d_covfun);
 
     // vector of all indices
@@ -687,6 +686,7 @@ void synthesize(
     NumericMatrix* betainfo,
     bool profbeta,
     bool grad_info ){
+    // Rcout << "covparms:\n" << covparms << endl;
     // data dimensions
     int n = y.nrow();
     //int m = NNarray.ncol();
@@ -721,6 +721,13 @@ void synthesize(
         &XSX, &ySX, &ySy, &logdet, &dXSX, &dySX, &dySy, &dlogdet, &ainfo,
         profbeta, grad_info
     );
+    // Rcout << "compute_pieces results" << endl;
+    // Rcout << "ySX:\n" << ySX << endl;
+    // Rcout << "ySy:\n" << arma::norm(ySy) << endl;
+    // Rcout << "logdet:\n" << logdet << endl;
+    // Rcout << "dySX:\n" << dySX << endl;
+    // Rcout << "dySy:\n" << arma::norm(dySy) << endl;
+    // Rcout << "dlogdet:\n" << arma::norm(dlogdet) << endl;
 
     // synthesize everything and update loglik, grad, beta, betainfo, info
     
@@ -752,7 +759,6 @@ void synthesize(
     }
     // get sigmahatsq
     arma::vec sig2 = arma::vec(k, fill::zeros);
-    
     // This deals with multidimensionality with matrix multiplication (fast)
     sig2 += (ySy - arma::sum( 2.0*( ySX.t() % abeta.t() ) -
       ( abeta.t() * XSX % abeta.t()), 1 ) )/n ;
@@ -769,13 +775,11 @@ void synthesize(
     //     ( abeta.t() * XSX * abeta ) )/n;
     // loglikelihood
     // (*ll)(0) = -0.5*( n*std::log(2.0*M_PI) + logdet + n*sig2 );
-    
     // Fully integrated loglikelihood
-    double log_S_2 = 0.0;
+    myFloat log_S_2 = 0.0;
     for(int loc_i=0;loc_i<k;loc_i++){
       log_S_2 += std::log(n*sig2(loc_i));
     }
-
     double logdet2 = 0.0;
     if(profbeta){
       // cholesky for XSX (cholmat2) defined above
@@ -809,7 +813,7 @@ void synthesize(
     for(int j=0; j<nparms; j++){
       (*grad)(j) = 0.0;
       (*grad)(j) -= 0.5*k*dlogdet(j);
-      double ratio = 0.0;
+      myFloat ratio = 0.0;
       
       if(profbeta){
         (*grad)(j) += 0.5*k*dlogdet2(j);
@@ -847,13 +851,13 @@ void synthesize(
         (*grad)(j) += n * ratio;
       }
     }
+    // Rcout << "grad:\n" << *grad << endl;
     // fisher information
     for(int i=0; i<nparms; i++){ for(int j=0; j<i+1; j++){
         (*info)(i,j) = ainfo(i,j);
         (*info)(j,i) = (*info)(i,j);
     }}
     }
-
 }
 
 
@@ -996,8 +1000,8 @@ NumericMatrix vecchia_Linv(
     covfun_name_string = covfun_name[0];
     
     // assign covariance fun and derivative based on covfun_name_string
-    mat (*p_covfun[1])(arma::vec, arma::mat);
-    cube (*p_d_covfun[1])(arma::vec, arma::mat);
+    arma::mat (*p_covfun[1])(arma::vec, arma::mat);
+    arma::cube (*p_d_covfun[1])(arma::vec, arma::mat);
     get_covfun(covfun_name_string, p_covfun, p_d_covfun);
     
     arma::mat Linv = arma::mat(n, m, fill::zeros);

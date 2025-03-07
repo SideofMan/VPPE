@@ -120,7 +120,6 @@ List vecchia_profbeta_loglik(
     NumericMatrix betahat( X.ncol(), y.ncol() );
     NumericMatrix info( covparms.length(), covparms.length() );
     NumericMatrix betainfo( X.ncol(), X.ncol() );
-    Rcout << "You are in vecchia_profbeta_loglik (no gradient)" << endl;
     // this function calls arma_onepass_compute_pieces
     // then synthesizes the result into loglik, beta, grad, info, betainfo
     synthesize(covparms, covfun_name, locs, NNarray, y, X,
