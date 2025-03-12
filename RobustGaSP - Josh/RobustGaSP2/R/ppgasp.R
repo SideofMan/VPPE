@@ -273,7 +273,7 @@ ppgasp <- function(design, response,trend=matrix(1,dim(response)[1],1),zero.mean
         model@LB=rep(-Inf,model@p)
       }
     }
-    cat('The upper bounds of the range parameters are',1/exp(model@LB),'\n') # UNCOMMENT
+    cat('The upper bounds of the range parameters are',1/exp(model@LB),'\n')
     
     ############################the lower bound might be needed to discuss
     
@@ -317,8 +317,8 @@ ppgasp <- function(design, response,trend=matrix(1,dim(response)[1],1),zero.mean
             ini_value=initial_values[i_ini,1:model@p]
             ###without the nugget
           }
-          cat('The initial values of range parameters are', 1/exp(ini_value[1:model@p]),'\n') # UNCOMMENT
-          cat('Start of the optimization ', i_ini,' : \n') # UNCOMMENT
+          cat('The initial values of range parameters are', 1/exp(ini_value[1:model@p]),'\n')
+          cat('Start of the optimization ', i_ini,' : \n')
           if(method=='post_mode'){
             if(prior_choice=='ref_approx'){####this one can be with nugget or without the nugget
               #  if (requireNamespace("lbfgs", quietly = TRUE)) {
@@ -327,7 +327,7 @@ ppgasp <- function(design, response,trend=matrix(1,dim(response)[1],1),zero.mean
                                             nugget=nugget, nugget.est=model@nugget.est,
                                             R0=model@R0,X=model@X, zero_mean=model@zero_mean,output=model@output, CL=model@CL, a=a,b=b,
                                             kernel_type=kernel_type_num,alpha=model@alpha,
-                                            vecchia=vecchia,locs=locs,NNarray=NNarray,lower=model@LB,
+                                            vecchia=vecchia,locs=locs,NNarray=NNarray,lower=model@LB,upper=-model@LB,
                                             nl.info = FALSE, control = list(maxeval=max_eval)),TRUE)
               }else{
                 tt_all <- try(nloptr::lbfgs(ini_value, neg_log_marginal_post_approx_ref_ppgasp,

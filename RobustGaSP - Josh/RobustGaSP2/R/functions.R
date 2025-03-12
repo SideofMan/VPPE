@@ -166,7 +166,7 @@ neg_log_marginal_post_approx_ref_ppgasp <- function(param,nugget, nugget.est,R0,
   if(vecchia){
     # vecchia and RobusGaSP have different ways of inputting range parameters
     rp=1/exp(param)
-    var_y=var(output)[1]
+    var_y=var(as.numeric(output))
     if(!nugget.est){
       rp=c(rp,nugget)
     }else{
@@ -197,7 +197,7 @@ neg_log_marginal_post_approx_ref_ppgasp <- function(param,nugget, nugget.est,R0,
   #print(param)
   #print(-(lml+lp))
   
-  # return both objective and gradient at the same time
+  # return both objective and gradient at the same time for Vecchia
   if(vecchia){
     lp_dev=log_approx_ref_prior_deriv(param,nugget,nugget.est,CL,a,b)
     value_and_grad=list("objective"=-(lml+lp), "gradient"=-(lml_dev+lp_dev)*exp(param))
