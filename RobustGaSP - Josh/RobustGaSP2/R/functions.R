@@ -189,11 +189,11 @@ neg_log_marginal_post_approx_ref_ppgasp <- function(param,nugget, nugget.est,R0,
       rp=c(rp[1:(length(param)-1)], exp(param[length(param)]))
     }
     if(zero_mean == "Yes"){
-      vecchia_result=GpGp2::vecchia_meanzero_loglik_grad_info(c(var_y,rp),kernel_type_vecchia,output,X,locs,NNarray)
+      vecchia_result=GpGp2::vecchia_meanzero_loglik_grad_info(c(var_y,rp),kernel_type_vecchia,output,X,locs,NNarray,alpha)
       lml=vecchia_result$loglik
       lml_dev=vecchia_result$grad[2:(1+length(param))]
     }else if(zero_mean == "No"){
-      vecchia_result=GpGp2::vecchia_profbeta_loglik_grad_info(c(var_y,rp),kernel_type_vecchia,output,X,locs,NNarray)
+      vecchia_result=GpGp2::vecchia_profbeta_loglik_grad_info(c(var_y,rp),kernel_type_vecchia,output,X,locs,NNarray,alpha)
       lml=vecchia_result$loglik
       lml_dev=vecchia_result$grad[2:(1+length(param))]
     }

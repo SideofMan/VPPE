@@ -55,7 +55,8 @@ List vecchia_profbeta_loglik_grad_info(
     NumericMatrix y,
     NumericMatrix X,
     const NumericMatrix locs,
-    NumericMatrix NNarray ){
+    NumericMatrix NNarray,
+    NumericVector alpha){
     NumericVector ll(1);
     NumericVector grad( covparms.length() );
     NumericMatrix betahat( X.ncol(), y.ncol() );
@@ -64,7 +65,7 @@ List vecchia_profbeta_loglik_grad_info(
     // this function calls arma_onepass_compute_pieces
     // then synthesizes the result into loglik, beta, grad, info, betainfo
 
-    synthesize(covparms, covfun_name, locs, NNarray, y, X,
+    synthesize(covparms, covfun_name, locs, NNarray, y, X, alpha,
         &ll, &betahat, &grad, &info, &betainfo, true, true 
     );
     
@@ -113,7 +114,8 @@ List vecchia_profbeta_loglik(
     NumericMatrix y,
     NumericMatrix X,
     const NumericMatrix locs,
-    NumericMatrix NNarray ){
+    NumericMatrix NNarray,
+    NumericVector alpha ){
     
     NumericVector ll(1);
     NumericVector grad( covparms.length() );
@@ -122,7 +124,7 @@ List vecchia_profbeta_loglik(
     NumericMatrix betainfo( X.ncol(), X.ncol() );
     // this function calls arma_onepass_compute_pieces
     // then synthesizes the result into loglik, beta, grad, info, betainfo
-    synthesize(covparms, covfun_name, locs, NNarray, y, X,
+    synthesize(covparms, covfun_name, locs, NNarray, y, X, alpha,
         &ll, &betahat, &grad, &info, &betainfo, true, false 
     );
     
@@ -173,7 +175,8 @@ List vecchia_meanzero_loglik_grad_info(
    NumericMatrix y,
    NumericMatrix X,
    const NumericMatrix locs,
-   NumericMatrix NNarray ){
+   NumericMatrix NNarray,
+   NumericVector alpha ){
 
  NumericVector ll(1);
  NumericVector grad( covparms.length() );
@@ -183,7 +186,7 @@ List vecchia_meanzero_loglik_grad_info(
 
  // this function calls arma_onepass_compute_pieces
  // then synthesizes the result into loglik, beta, grad, info, betainfo
- synthesize(covparms, covfun_name, locs, NNarray, y, X,
+ synthesize(covparms, covfun_name, locs, NNarray, y, X, alpha,
             &ll, &betahat, &grad, &info, &betainfo, false, true
  );
 
@@ -234,7 +237,8 @@ List vecchia_meanzero_loglik(
     StringVector covfun_name,
     NumericMatrix y,
     const NumericMatrix locs,
-    NumericMatrix NNarray ){
+    NumericMatrix NNarray,
+    NumericVector alpha ){
     
     NumericMatrix X(1,1);
     NumericVector ll(1);
@@ -247,7 +251,7 @@ List vecchia_meanzero_loglik(
 
     // this function calls arma_onepass_compute_pieces
     // then synthesizes the result into loglik, beta, grad, info, betainfo
-    synthesize(covparms, covfun_name, locs, NNarray, y, X,
+    synthesize(covparms, covfun_name, locs, NNarray, y, X, alpha,
         &ll, &betahat, &grad, &info, &betainfo, false, false 
     );
     

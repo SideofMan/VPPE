@@ -884,8 +884,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // vecchia_profbeta_loglik_grad_info
-List vecchia_profbeta_loglik_grad_info(NumericVector covparms, StringVector covfun_name, NumericMatrix y, NumericMatrix X, const NumericMatrix locs, NumericMatrix NNarray);
-RcppExport SEXP _GpGp2_vecchia_profbeta_loglik_grad_info(SEXP covparmsSEXP, SEXP covfun_nameSEXP, SEXP ySEXP, SEXP XSEXP, SEXP locsSEXP, SEXP NNarraySEXP) {
+List vecchia_profbeta_loglik_grad_info(NumericVector covparms, StringVector covfun_name, NumericMatrix y, NumericMatrix X, const NumericMatrix locs, NumericMatrix NNarray, NumericVector alpha);
+RcppExport SEXP _GpGp2_vecchia_profbeta_loglik_grad_info(SEXP covparmsSEXP, SEXP covfun_nameSEXP, SEXP ySEXP, SEXP XSEXP, SEXP locsSEXP, SEXP NNarraySEXP, SEXP alphaSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -895,13 +895,14 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< NumericMatrix >::type X(XSEXP);
     Rcpp::traits::input_parameter< const NumericMatrix >::type locs(locsSEXP);
     Rcpp::traits::input_parameter< NumericMatrix >::type NNarray(NNarraySEXP);
-    rcpp_result_gen = Rcpp::wrap(vecchia_profbeta_loglik_grad_info(covparms, covfun_name, y, X, locs, NNarray));
+    Rcpp::traits::input_parameter< NumericVector >::type alpha(alphaSEXP);
+    rcpp_result_gen = Rcpp::wrap(vecchia_profbeta_loglik_grad_info(covparms, covfun_name, y, X, locs, NNarray, alpha));
     return rcpp_result_gen;
 END_RCPP
 }
 // vecchia_profbeta_loglik
-List vecchia_profbeta_loglik(NumericVector covparms, StringVector covfun_name, NumericMatrix y, NumericMatrix X, const NumericMatrix locs, NumericMatrix NNarray);
-RcppExport SEXP _GpGp2_vecchia_profbeta_loglik(SEXP covparmsSEXP, SEXP covfun_nameSEXP, SEXP ySEXP, SEXP XSEXP, SEXP locsSEXP, SEXP NNarraySEXP) {
+List vecchia_profbeta_loglik(NumericVector covparms, StringVector covfun_name, NumericMatrix y, NumericMatrix X, const NumericMatrix locs, NumericMatrix NNarray, NumericVector alpha);
+RcppExport SEXP _GpGp2_vecchia_profbeta_loglik(SEXP covparmsSEXP, SEXP covfun_nameSEXP, SEXP ySEXP, SEXP XSEXP, SEXP locsSEXP, SEXP NNarraySEXP, SEXP alphaSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -911,13 +912,14 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< NumericMatrix >::type X(XSEXP);
     Rcpp::traits::input_parameter< const NumericMatrix >::type locs(locsSEXP);
     Rcpp::traits::input_parameter< NumericMatrix >::type NNarray(NNarraySEXP);
-    rcpp_result_gen = Rcpp::wrap(vecchia_profbeta_loglik(covparms, covfun_name, y, X, locs, NNarray));
+    Rcpp::traits::input_parameter< NumericVector >::type alpha(alphaSEXP);
+    rcpp_result_gen = Rcpp::wrap(vecchia_profbeta_loglik(covparms, covfun_name, y, X, locs, NNarray, alpha));
     return rcpp_result_gen;
 END_RCPP
 }
 // vecchia_meanzero_loglik_grad_info
-List vecchia_meanzero_loglik_grad_info(NumericVector covparms, StringVector covfun_name, NumericMatrix y, NumericMatrix X, const NumericMatrix locs, NumericMatrix NNarray);
-RcppExport SEXP _GpGp2_vecchia_meanzero_loglik_grad_info(SEXP covparmsSEXP, SEXP covfun_nameSEXP, SEXP ySEXP, SEXP XSEXP, SEXP locsSEXP, SEXP NNarraySEXP) {
+List vecchia_meanzero_loglik_grad_info(NumericVector covparms, StringVector covfun_name, NumericMatrix y, NumericMatrix X, const NumericMatrix locs, NumericMatrix NNarray, NumericVector alpha);
+RcppExport SEXP _GpGp2_vecchia_meanzero_loglik_grad_info(SEXP covparmsSEXP, SEXP covfun_nameSEXP, SEXP ySEXP, SEXP XSEXP, SEXP locsSEXP, SEXP NNarraySEXP, SEXP alphaSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -927,13 +929,14 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< NumericMatrix >::type X(XSEXP);
     Rcpp::traits::input_parameter< const NumericMatrix >::type locs(locsSEXP);
     Rcpp::traits::input_parameter< NumericMatrix >::type NNarray(NNarraySEXP);
-    rcpp_result_gen = Rcpp::wrap(vecchia_meanzero_loglik_grad_info(covparms, covfun_name, y, X, locs, NNarray));
+    Rcpp::traits::input_parameter< NumericVector >::type alpha(alphaSEXP);
+    rcpp_result_gen = Rcpp::wrap(vecchia_meanzero_loglik_grad_info(covparms, covfun_name, y, X, locs, NNarray, alpha));
     return rcpp_result_gen;
 END_RCPP
 }
 // vecchia_meanzero_loglik
-List vecchia_meanzero_loglik(NumericVector covparms, StringVector covfun_name, NumericMatrix y, const NumericMatrix locs, NumericMatrix NNarray);
-RcppExport SEXP _GpGp2_vecchia_meanzero_loglik(SEXP covparmsSEXP, SEXP covfun_nameSEXP, SEXP ySEXP, SEXP locsSEXP, SEXP NNarraySEXP) {
+List vecchia_meanzero_loglik(NumericVector covparms, StringVector covfun_name, NumericMatrix y, const NumericMatrix locs, NumericMatrix NNarray, NumericVector alpha);
+RcppExport SEXP _GpGp2_vecchia_meanzero_loglik(SEXP covparmsSEXP, SEXP covfun_nameSEXP, SEXP ySEXP, SEXP locsSEXP, SEXP NNarraySEXP, SEXP alphaSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -942,7 +945,8 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< NumericMatrix >::type y(ySEXP);
     Rcpp::traits::input_parameter< const NumericMatrix >::type locs(locsSEXP);
     Rcpp::traits::input_parameter< NumericMatrix >::type NNarray(NNarraySEXP);
-    rcpp_result_gen = Rcpp::wrap(vecchia_meanzero_loglik(covparms, covfun_name, y, locs, NNarray));
+    Rcpp::traits::input_parameter< NumericVector >::type alpha(alphaSEXP);
+    rcpp_result_gen = Rcpp::wrap(vecchia_meanzero_loglik(covparms, covfun_name, y, locs, NNarray, alpha));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -1067,10 +1071,10 @@ static const R_CallMethodDef CallEntries[] = {
     {"_GpGp2_Linv_t_mult", (DL_FUNC) &_GpGp2_Linv_t_mult, 3},
     {"_GpGp2_L_t_mult", (DL_FUNC) &_GpGp2_L_t_mult, 3},
     {"_GpGp2_vecchia_Linv", (DL_FUNC) &_GpGp2_vecchia_Linv, 5},
-    {"_GpGp2_vecchia_profbeta_loglik_grad_info", (DL_FUNC) &_GpGp2_vecchia_profbeta_loglik_grad_info, 6},
-    {"_GpGp2_vecchia_profbeta_loglik", (DL_FUNC) &_GpGp2_vecchia_profbeta_loglik, 6},
-    {"_GpGp2_vecchia_meanzero_loglik_grad_info", (DL_FUNC) &_GpGp2_vecchia_meanzero_loglik_grad_info, 6},
-    {"_GpGp2_vecchia_meanzero_loglik", (DL_FUNC) &_GpGp2_vecchia_meanzero_loglik, 5},
+    {"_GpGp2_vecchia_profbeta_loglik_grad_info", (DL_FUNC) &_GpGp2_vecchia_profbeta_loglik_grad_info, 7},
+    {"_GpGp2_vecchia_profbeta_loglik", (DL_FUNC) &_GpGp2_vecchia_profbeta_loglik, 7},
+    {"_GpGp2_vecchia_meanzero_loglik_grad_info", (DL_FUNC) &_GpGp2_vecchia_meanzero_loglik_grad_info, 7},
+    {"_GpGp2_vecchia_meanzero_loglik", (DL_FUNC) &_GpGp2_vecchia_meanzero_loglik, 6},
     {"_GpGp2_vecchia_grouped_profbeta_loglik_grad_info", (DL_FUNC) &_GpGp2_vecchia_grouped_profbeta_loglik_grad_info, 6},
     {"_GpGp2_vecchia_grouped_profbeta_loglik", (DL_FUNC) &_GpGp2_vecchia_grouped_profbeta_loglik, 6},
     {"_GpGp2_vecchia_grouped_meanzero_loglik", (DL_FUNC) &_GpGp2_vecchia_grouped_meanzero_loglik, 5},

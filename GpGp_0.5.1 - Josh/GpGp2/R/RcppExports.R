@@ -1173,8 +1173,8 @@ vecchia_Linv <- function(covparms, covfun_name, locs, NNarray, start_ind = 1L) {
 #' #loglik <- vecchia_profbeta_loglik_grad_info( covparms, "matern_isotropic", 
 #' #    y, X, locs, NNarray )
 #' @export
-vecchia_profbeta_loglik_grad_info <- function(covparms, covfun_name, y, X, locs, NNarray) {
-    .Call('_GpGp2_vecchia_profbeta_loglik_grad_info', PACKAGE = 'GpGp2', covparms, covfun_name, y, X, locs, NNarray)
+vecchia_profbeta_loglik_grad_info <- function(covparms, covfun_name, y, X, locs, NNarray, alpha) {
+    .Call('_GpGp2_vecchia_profbeta_loglik_grad_info', PACKAGE = 'GpGp2', covparms, covfun_name, y, X, locs, NNarray, alpha)
 }
 
 #' Vecchia's approximation to the Gaussian loglikelihood, with profiled 
@@ -1209,8 +1209,8 @@ vecchia_profbeta_loglik_grad_info <- function(covparms, covfun_name, y, X, locs,
 #' NNarray <- find_ordered_nn(locs,20)
 #' #loglik <- vecchia_profbeta_loglik( covparms, "matern_isotropic", y, X, locs, NNarray )
 #' @export
-vecchia_profbeta_loglik <- function(covparms, covfun_name, y, X, locs, NNarray) {
-    .Call('_GpGp2_vecchia_profbeta_loglik', PACKAGE = 'GpGp2', covparms, covfun_name, y, X, locs, NNarray)
+vecchia_profbeta_loglik <- function(covparms, covfun_name, y, X, locs, NNarray, alpha) {
+    .Call('_GpGp2_vecchia_profbeta_loglik', PACKAGE = 'GpGp2', covparms, covfun_name, y, X, locs, NNarray, alpha)
 }
 
 #' Vecchia's approximation to the Gaussian loglikelihood, zero mean, gradient
@@ -1247,8 +1247,8 @@ vecchia_profbeta_loglik <- function(covparms, covfun_name, y, X, locs, NNarray) 
 #' #loglik <- vecchia_profbeta_loglik_grad_info( covparms, "matern_isotropic",
 #' #    y, X, locs, NNarray )
 #' @export
-vecchia_meanzero_loglik_grad_info <- function(covparms, covfun_name, y, X, locs, NNarray) {
-    .Call('_GpGp2_vecchia_meanzero_loglik_grad_info', PACKAGE = 'GpGp2', covparms, covfun_name, y, X, locs, NNarray)
+vecchia_meanzero_loglik_grad_info <- function(covparms, covfun_name, y, X, locs, NNarray, alpha) {
+    .Call('_GpGp2_vecchia_meanzero_loglik_grad_info', PACKAGE = 'GpGp2', covparms, covfun_name, y, X, locs, NNarray, alpha)
 }
 
 #' Vecchia's approximation to the Gaussian loglikelihood, zero mean
@@ -1285,8 +1285,8 @@ vecchia_meanzero_loglik_grad_info <- function(covparms, covfun_name, y, X, locs,
 #' NNarray <- find_ordered_nn(locs,20)
 #' #loglik <- vecchia_meanzero_loglik( covparms, "matern_isotropic", y, locs, NNarray )
 #' @export
-vecchia_meanzero_loglik <- function(covparms, covfun_name, y, locs, NNarray) {
-    .Call('_GpGp2_vecchia_meanzero_loglik', PACKAGE = 'GpGp2', covparms, covfun_name, y, locs, NNarray)
+vecchia_meanzero_loglik <- function(covparms, covfun_name, y, locs, NNarray, alpha) {
+    .Call('_GpGp2_vecchia_meanzero_loglik', PACKAGE = 'GpGp2', covparms, covfun_name, y, locs, NNarray, alpha)
 }
 
 #' Grouped Vecchia loglikelihood, gradient, Fisher information

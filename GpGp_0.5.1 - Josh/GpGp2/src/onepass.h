@@ -142,8 +142,60 @@ arma::mat mychol( arma::mat A ){
     return L;	
 }
 
+arma::mat pow_exp(arma::vec covparms, arma::mat locs, arma::vec alpha ){
+  
+  int dim = locs.n_cols;
+  
+  if( covparms.n_elem - 2 != dim ){
+    stop("length of covparms does not match dim of locs");
+  }
+  
+  int n = locs.n_rows;
+  double nugget = covparms( 0 )*covparms( dim + 1 );
+  
+  // Initialize the final covariance matrix with ones
+  arma::mat final_covmat = arma::ones(n, n);
+  
+  // create scaled locations
+  mat locs_scaled(n,dim);
+  for(int j=0; j<dim; j++){
+    for(int i=0; i<n; i++){
+      locs_scaled(i,j) = locs(i,j)/covparms(1+j);
+    }
+  }
+  
+  for(int j = 0; j < dim; j++){
+    // create covariance matrix for each dimension and multiply elementwise
+    arma::mat covmat(n,n);
+    
+    for(int i1 = 0; i1 < n; i1++){ for(int i2 = 0; i2 <= i1; i2++){
+      // calculate distance
+      double d = 0.0;
+      d += pow( abs( locs_scaled(i1,j) - locs_scaled(i2,j) ), alpha(j) );
+      // d = pow( d, 0.5 );
+      
+      if( d == 0.0 ){
+        covmat(i2,i1) = 1.0;
+      } else {
+        // calculate covariance
+        covmat(i2,i1) = exp(-d);
+      }
+      // add nugget (do not add nugget here, add at end)
+      if( i1 == i2 ){ covmat(i2,i2) += 0; } 
+      // fill in opposite entry
+      else { covmat(i1,i2) = covmat(i2,i1); }
+    }}
+    
+    final_covmat %= covmat;
+    
+  }
+  final_covmat *= covparms(0);
+  final_covmat += nugget*arma::mat(n,n,arma::fill::eye);
+  
+  return (final_covmat); // need to account for the lack of variance above
+}
 
-arma::cube fast_d_wrapper_function(arma::vec covparms, arma::mat locs, arma::mat covmat, std::string covfun_name_string){
+arma::cube fast_d_wrapper_function(arma::vec covparms, arma::mat locs, arma::mat covmat, std::string covfun_name_string, arma::vec alpha){
   if( covfun_name_string.compare("matern15_scaledim") == 0 ){
     // computing the derivative matrix with precomputed covmat
     
@@ -261,7 +313,61 @@ arma::cube fast_d_wrapper_function(arma::vec covparms, arma::mat locs, arma::mat
       }
     }
     return dcovmat;
-  }else {
+  } else if( covfun_name_string.compare("pow_exp") == 0 ) {
+    // computing the derivative matrix with precomputed covmat
+    
+    int dim = locs.n_cols;
+    if( covparms.n_elem - 2 != dim ){
+      stop("length of covparms does not match dim of locs");
+    }
+    
+    arma::mat R;
+    
+    if( covmat.empty() ){
+      R = pow_exp(covparms, locs, alpha);
+    } else {
+      R = covmat;
+    }
+    
+    int n = locs.n_rows;
+    double nugget = covparms( 0 )*covparms( dim + 1 );
+    
+    // need the covariance matrix without nugget or variance
+    R = (R - nugget*arma::mat(n,n,arma::fill::eye))/covparms(0);
+    
+    // Create array of absolute difference matrices of locs
+    arma::cube R0 = arma::cube(n,n,dim, fill::zeros);
+    for(int k = 0; k < dim; k++){
+      arma::vec col_k = locs.col(k);
+      
+      for(int i = 0; i < n; i++){
+        for(int j = i; j < n; j++){
+          double abs_diff = std::abs(col_k(i) - col_k(j));
+          R0(i, j, k) = abs_diff;
+          R0(j, i, k) = abs_diff;
+        }
+      }
+    }
+    
+    // calculate derivatives
+    arma::cube dcovmat = arma::cube(n,n,covparms.n_elem, fill::zeros);
+    for(int k = 0; k < covparms.n_elem; k++){
+      if(k == 0){
+        dcovmat.slice(k) = R;
+      } else if(k == covparms.n_elem - 1){
+        // dcovmat.slice(k) = covparms(0)*arma::mat(n,n,arma::fill::eye);
+        // For the gradient, omit the variance term to be consistent with RobustGaSP
+        dcovmat.slice(k) = arma::mat(n,n,arma::fill::eye);
+      } else{
+        arma::mat R0_k;
+        R0_k = R0.slice(k-1);
+        double alpha_k = alpha(k-1);
+        
+        dcovmat.slice(k) = -(alpha_k*pow(1/covparms(k), alpha_k-1))*(pow(R0_k, alpha_k))%(R*covparms(0))*(-1/pow(covparms(k), 2.0)); // need to divide by range parameter (chain rule)
+      }
+    }
+    return dcovmat;
+  } else {
     stop("The covariance function specified does is not supported");
   }
 }
@@ -274,6 +380,7 @@ void compute_pieces(
     arma::mat NNarray,
     arma::mat y, 
     arma::mat X,
+    arma::vec alpha,
     arma::mat* XSX,
     arma::mat* ySX,
     arma::vec* ySy,
@@ -338,7 +445,12 @@ void compute_pieces(
             }
         }
         // compute covariance matrix and derivatives and take cholesky
-        arma::mat covmat = p_covfun[0]( covparms, locsub );
+        arma::mat covmat;
+        if(covfun_name_string.compare("pow_exp") == 0){
+          covmat = pow_exp( covparms, locsub, alpha);
+        } else {
+          covmat = p_covfun[0]( covparms, locsub );
+        }
         arma::cube dcovmat;
         // if(grad_info){ 
         //     dcovmat = p_d_covfun[0]( covparms, locsub ); 
@@ -346,9 +458,11 @@ void compute_pieces(
         
         if(grad_info){
           if(covfun_name_string.compare("matern15_scaledim") == 0){
-            dcovmat = fast_d_wrapper_function( covparms, locsub, covmat, covfun_name_string );
+            dcovmat = fast_d_wrapper_function( covparms, locsub, covmat, covfun_name_string, alpha );
           } else if(covfun_name_string.compare("matern25_scaledim") == 0) {
-            dcovmat = fast_d_wrapper_function( covparms, locsub, covmat, covfun_name_string );
+            dcovmat = fast_d_wrapper_function( covparms, locsub, covmat, covfun_name_string, alpha );
+          } else if(covfun_name_string.compare("pow_exp") == 0) {
+            dcovmat = fast_d_wrapper_function( covparms, locsub, covmat, covfun_name_string, alpha );
           } else {
             dcovmat = p_d_covfun[0]( covparms, locsub );
           }
@@ -736,6 +850,7 @@ void synthesize(
     NumericMatrix NNarray,
     NumericMatrix& y, 
     NumericMatrix X,
+    NumericVector alpha,
     NumericVector* ll, 
     NumericMatrix* betahat,
     NumericVector* grad,
@@ -772,8 +887,9 @@ void synthesize(
     arma::mat NNarray_c = arma::mat(NNarray.begin(),NNarray.nrow(),NNarray.ncol());
     arma::mat y_c = arma::mat(y.begin(), y.nrow(), y.ncol());
     arma::mat X_c = arma::mat(X.begin(),X.nrow(),X.ncol());
+    arma::vec alpha_c = arma::vec(alpha.begin(),alpha.length());
     compute_pieces(
-        covparms_c, covfun_name, locs_c, NNarray_c, y_c, X_c,
+        covparms_c, covfun_name, locs_c, NNarray_c, y_c, X_c, alpha_c,
         &XSX, &ySX, &ySy, &logdet, &dXSX, &dySX, &dySy, &dlogdet, &ainfo,
         profbeta, grad_info
     );
