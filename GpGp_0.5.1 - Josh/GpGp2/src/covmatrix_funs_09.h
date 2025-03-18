@@ -84,7 +84,6 @@ arma::mat matern15_scaledim(arma::vec covparms, arma::mat locs ){
   final_covmat *= covparms(0);
   final_covmat += nugget*arma::mat(n,n,arma::fill::eye);
   
-  // return (final_covmat); // need to account for the multiplying of variance multiple times
   return (final_covmat); // need to account for the lack of variance above
 }
 

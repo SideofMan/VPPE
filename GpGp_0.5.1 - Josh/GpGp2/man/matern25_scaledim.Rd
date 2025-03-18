@@ -35,7 +35,7 @@ all pairwise covariances.
 
 The covariance parameter vector is (variance, range_1, ..., range_d, nugget).
 The covariance function is parameterized as
-\deqn{ M(x,y) = \sigma^2 (1 + || D^{-1}(x - y) || + || D^{-1}(x - y) ||^2/3.0) exp( - || D^{-1}(x - y) || ) }
+\deqn{ M(x,y) = \sigma^2 (1 + \sqrt{5}|| D^{-1}(x - y) || + 5|| D^{-1}(x - y) ||^{2}/3 ) exp( - \sqrt{5}|| D^{-1}(x - y) || ) }
 where D is a diagonal matrix with (range_1, ..., range_d) on the diagonals.
 The nugget value \eqn{ \sigma^2 \tau^2 } is added to the diagonal of the covariance matrix.
 NOTE: the nugget is \eqn{ \sigma^2 \tau^2 }, not \eqn{ \tau^2 }.

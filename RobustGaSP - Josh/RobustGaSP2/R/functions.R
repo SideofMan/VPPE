@@ -164,6 +164,22 @@ neg_log_marginal_post_approx_ref_ppgasp <- function(param,nugget, nugget.est,R0,
   #####
   # if vecchia is true, this function returns both the value and the gradient
   if(vecchia){
+    # convert the kernel type into string for Vecchia
+    if(length(unique(kernel_type)) > 1){
+      stop("Vecchia method requires the same kernel across input parameters.")
+    } else {
+      k_type = unique(kernel_type)
+      if(k_type == 1){
+        kernel_type_vecchia = "pow_exp"
+      } else if (k_type == 2){
+        kernel_type_vecchia = "matern15_scaledim"
+      } else if (k_type == 3){
+        kernel_type_vecchia = "matern25_scaledim"
+      } else {
+        kernel_type_vecchia = "matern25_scaledim"
+      }
+    }
+    
     # vecchia and RobusGaSP have different ways of inputting range parameters
     rp=1/exp(param)
     var_y=var(as.numeric(output))
@@ -173,11 +189,11 @@ neg_log_marginal_post_approx_ref_ppgasp <- function(param,nugget, nugget.est,R0,
       rp=c(rp[1:(length(param)-1)], exp(param[length(param)]))
     }
     if(zero_mean == "Yes"){
-      vecchia_result=GpGp2::vecchia_meanzero_loglik_grad_info(c(var_y,rp),"matern15_scaledim",output,X,locs,NNarray)
+      vecchia_result=GpGp2::vecchia_meanzero_loglik_grad_info(c(var_y,rp),kernel_type_vecchia,output,X,locs,NNarray)
       lml=vecchia_result$loglik
       lml_dev=vecchia_result$grad[2:(1+length(param))]
     }else if(zero_mean == "No"){
-      vecchia_result=GpGp2::vecchia_profbeta_loglik_grad_info(c(var_y,rp),"matern15_scaledim",output,X,locs,NNarray)
+      vecchia_result=GpGp2::vecchia_profbeta_loglik_grad_info(c(var_y,rp),kernel_type_vecchia,output,X,locs,NNarray)
       lml=vecchia_result$loglik
       lml_dev=vecchia_result$grad[2:(1+length(param))]
     }
@@ -186,6 +202,7 @@ neg_log_marginal_post_approx_ref_ppgasp <- function(param,nugget, nugget.est,R0,
     # this ensures that the output of this function feeds gradient wrt inverse range.par
     # additionally, we need to multiply by the var(y) to account for the Vecchia gradient using a different covariance function
     if(!nugget.est){
+      lml_dev = lml_dev[1:length(param)] # Vecchia outputs the nugget part too
       lml_dev = lml_dev*(-rp[1:(length(rp)-1)]^2)
     }else{
       lml_dev = lml_dev*c(-rp[1:(length(rp)-1)]^2, var_y)
