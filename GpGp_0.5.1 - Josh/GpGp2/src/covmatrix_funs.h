@@ -193,6 +193,12 @@ void get_covfun(std::string covfun_name_string,  mat (*p_covfun[1])(arma::vec, a
         p_covfun[0] = matern_spacetime_categorical_local;
         p_d_covfun[0] = d_matern_spacetime_categorical_local;
     }
+    else if( covfun_name_string.compare("pow_exp") == 0 )
+    {
+        // These are not used at all, just here so the Rcout below doesn't trigger
+        p_covfun[0] = exponential_scaledim;
+        p_d_covfun[0] = d_exponential_scaledim;
+    }
     else { // stop the program
         Rcpp::Rcout << "Unrecognized Covariance Function Name \n";
     }

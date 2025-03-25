@@ -1557,7 +1557,7 @@ Eigen::VectorXd log_marginal_lik_deriv_ppgasp(const Eigen::VectorXd & param,doub
       for(int loc_i=0;loc_i<k;loc_i++){
         ratio=ratio+((output.col(loc_i).transpose()*Wb_ti.transpose()*(yt_R_inv.row(loc_i).transpose()-R_inv_X_Xt_R_inv_X_inv_Xt_R_inv*output.col(loc_i)))(0,0))/S_2_vec[loc_i];
       }
-      ans[p]=-0.5*k*Wb_ti.diagonal().sum()  +(num_obs-q)/2.0*ratio;
+      ans[p]=-0.5*k*Wb_ti.diagonal().sum()+(num_obs-q)/2.0*ratio;
       
       //ans[p]=-0.5*Wb_ti.diagonal().sum()+(num_obs-q)/2.0*(output.transpose()*Wb_ti.transpose()*Q_output/S_2(0,0))(0,0); 
     }

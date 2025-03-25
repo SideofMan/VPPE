@@ -18,7 +18,6 @@ ppgasp <- function(design, response,trend=matrix(1,dim(response)[1],1),zero.mean
                   kernel_type='matern_5_2',isotropic=F,R0=NA,optimization='lbfgs',
                   alpha=rep(1.9,dim(as.matrix(design))[2]),lower_bound=T,max_eval=max(30,20+5*dim(design)[2]),
                   initial_values=NA,num_initial_values=2,vecchia=F,locs=NA,NNarray=NA){
-  
   if (!is.logical(nugget.est) && length(nugget.est) != 1){
     stop("nugget.est should be boolean (either T or F) \n")
   }
@@ -239,8 +238,18 @@ ppgasp <- function(design, response,trend=matrix(1,dim(response)[1],1),zero.mean
    
       COND_NUM_UB = 10^{16}  ###maximum condition number, this might be a little too large
       if(lower_bound==T){
-      LB_all = optimize(search_LB_prob, interval=c(-5,12), maximum = FALSE, R0=model@R0,COND_NUM_UB= COND_NUM_UB,
-                        p=model@p,kernel_type=kernel_type_num,alpha=model@alpha,nugget=nugget) ###find a lower bound for parameter beta
+      # let's speed this up, shall we?
+      if(model@num_obs > 500){
+        sample_ind = sample(1:model@num_obs, 500, replace = F)
+        temp_R0 = lapply(model@R0, function(Sigma) Sigma[sample_ind,sample_ind])
+        LB_all = optimize(search_LB_prob, interval=c(-5,12), maximum = FALSE, R0=temp_R0,COND_NUM_UB= COND_NUM_UB,
+                          p=model@p,kernel_type=kernel_type_num,alpha=model@alpha,nugget=nugget) ###find a lower bound for parameter beta
+      }else{
+        LB_all = optimize(search_LB_prob, interval=c(-5,12), maximum = FALSE, R0=model@R0,COND_NUM_UB= COND_NUM_UB,
+                          p=model@p,kernel_type=kernel_type_num,alpha=model@alpha,nugget=nugget) ###find a lower bound for parameter beta
+      }
+      # LB_all = optimize(search_LB_prob, interval=c(-5,12), maximum = FALSE, R0=model@R0,COND_NUM_UB= COND_NUM_UB,
+      #                   p=model@p,kernel_type=kernel_type_num,alpha=model@alpha,nugget=nugget) ###find a lower bound for parameter beta
       
       LB_prob = exp(LB_all$minimum)/(exp(LB_all$minimum)+1)
       
@@ -273,7 +282,8 @@ ppgasp <- function(design, response,trend=matrix(1,dim(response)[1],1),zero.mean
         model@LB=rep(-Inf,model@p)
       }
     }
-    cat('The upper bounds of the range parameters are',1/exp(model@LB),'\n') # UNCOMMENT
+    model@LB = model@LB # DELETE
+    cat('The upper bounds of the range parameters are',1/exp(model@LB),'\n')
     
     ############################the lower bound might be needed to discuss
     
@@ -309,6 +319,7 @@ ppgasp <- function(design, response,trend=matrix(1,dim(response)[1],1),zero.mean
     }
     
     model@log_post=-Inf;
+    
     if(optimization=='lbfgs'){
       for(i_ini in 1:num_initial_values){
           if(model@nugget.est){
@@ -317,18 +328,23 @@ ppgasp <- function(design, response,trend=matrix(1,dim(response)[1],1),zero.mean
             ini_value=initial_values[i_ini,1:model@p]
             ###without the nugget
           }
-          cat('The initial values of range parameters are', 1/exp(ini_value[1:model@p]),'\n') # UNCOMMENT
-          cat('Start of the optimization ', i_ini,' : \n') # UNCOMMENT
+          cat('The initial values of range parameters are', 1/exp(ini_value[1:model@p]),'\n')
+          cat('Start of the optimization ', i_ini,' : \n')
           if(method=='post_mode'){
             if(prior_choice=='ref_approx'){####this one can be with nugget or without the nugget
               #  if (requireNamespace("lbfgs", quietly = TRUE)) {
               if(vecchia){
+                UB=unlist(lapply(lapply(model@R0,max), function(x) max(1/log(x),20))) # take the upper bound from brent
+                if(model@nugget.est){
+                  UB = c(UB,Inf)
+                }
                 tt_all <- try(nloptr::lbfgs(ini_value, neg_log_marginal_post_approx_ref_ppgasp,
                                             nugget=nugget, nugget.est=model@nugget.est,
                                             R0=model@R0,X=model@X, zero_mean=model@zero_mean,output=model@output, CL=model@CL, a=a,b=b,
                                             kernel_type=kernel_type_num,alpha=model@alpha,
                                             vecchia=vecchia,locs=locs,NNarray=NNarray,lower=model@LB,
-                                            nl.info = FALSE, control = list(maxeval=max_eval)),TRUE)
+                                            upper=UB,
+                                            nl.info = FALSE, control = list(maxeval=max_eval,check_derivatives=F)),FALSE)
               }else{
                 tt_all <- try(nloptr::lbfgs(ini_value, neg_log_marginal_post_approx_ref_ppgasp,
                                           neg_log_marginal_post_approx_ref_deriv_ppgasp,

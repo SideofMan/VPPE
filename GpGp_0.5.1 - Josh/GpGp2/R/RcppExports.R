@@ -783,7 +783,7 @@ d_matern25_isotropic <- function(covparms, locs) {
 #' @section Parameterization:
 #' The covariance parameter vector is (variance, range_1, ..., range_d, nugget).
 #' The covariance function is parameterized as
-#' \deqn{ M(x,y) = \sigma^2 (1 + || D^{-1}(x - y) || + || D^{-1}(x - y) ||^2/3.0) exp( - || D^{-1}(x - y) || ) }
+#' \deqn{ M(x,y) = \sigma^2 (1 + \sqrt{5}|| D^{-1}(x - y) || + 5|| D^{-1}(x - y) ||^{2}/3 ) exp( - \sqrt{5}|| D^{-1}(x - y) || ) }
 #' where D is a diagonal matrix with (range_1, ..., range_d) on the diagonals.
 #' The nugget value \eqn{ \sigma^2 \tau^2 } is added to the diagonal of the covariance matrix.
 #' NOTE: the nugget is \eqn{ \sigma^2 \tau^2 }, not \eqn{ \tau^2 }. 
@@ -1173,8 +1173,8 @@ vecchia_Linv <- function(covparms, covfun_name, locs, NNarray, start_ind = 1L) {
 #' #loglik <- vecchia_profbeta_loglik_grad_info( covparms, "matern_isotropic", 
 #' #    y, X, locs, NNarray )
 #' @export
-vecchia_profbeta_loglik_grad_info <- function(covparms, covfun_name, y, X, locs, NNarray) {
-    .Call('_GpGp2_vecchia_profbeta_loglik_grad_info', PACKAGE = 'GpGp2', covparms, covfun_name, y, X, locs, NNarray)
+vecchia_profbeta_loglik_grad_info <- function(covparms, covfun_name, y, X, locs, NNarray, alpha) {
+    .Call('_GpGp2_vecchia_profbeta_loglik_grad_info', PACKAGE = 'GpGp2', covparms, covfun_name, y, X, locs, NNarray, alpha)
 }
 
 #' Vecchia's approximation to the Gaussian loglikelihood, with profiled 
@@ -1209,8 +1209,8 @@ vecchia_profbeta_loglik_grad_info <- function(covparms, covfun_name, y, X, locs,
 #' NNarray <- find_ordered_nn(locs,20)
 #' #loglik <- vecchia_profbeta_loglik( covparms, "matern_isotropic", y, X, locs, NNarray )
 #' @export
-vecchia_profbeta_loglik <- function(covparms, covfun_name, y, X, locs, NNarray) {
-    .Call('_GpGp2_vecchia_profbeta_loglik', PACKAGE = 'GpGp2', covparms, covfun_name, y, X, locs, NNarray)
+vecchia_profbeta_loglik <- function(covparms, covfun_name, y, X, locs, NNarray, alpha) {
+    .Call('_GpGp2_vecchia_profbeta_loglik', PACKAGE = 'GpGp2', covparms, covfun_name, y, X, locs, NNarray, alpha)
 }
 
 #' Vecchia's approximation to the Gaussian loglikelihood, zero mean, gradient
@@ -1247,8 +1247,8 @@ vecchia_profbeta_loglik <- function(covparms, covfun_name, y, X, locs, NNarray) 
 #' #loglik <- vecchia_profbeta_loglik_grad_info( covparms, "matern_isotropic",
 #' #    y, X, locs, NNarray )
 #' @export
-vecchia_meanzero_loglik_grad_info <- function(covparms, covfun_name, y, X, locs, NNarray) {
-    .Call('_GpGp2_vecchia_meanzero_loglik_grad_info', PACKAGE = 'GpGp2', covparms, covfun_name, y, X, locs, NNarray)
+vecchia_meanzero_loglik_grad_info <- function(covparms, covfun_name, y, X, locs, NNarray, alpha) {
+    .Call('_GpGp2_vecchia_meanzero_loglik_grad_info', PACKAGE = 'GpGp2', covparms, covfun_name, y, X, locs, NNarray, alpha)
 }
 
 #' Vecchia's approximation to the Gaussian loglikelihood, zero mean
@@ -1285,8 +1285,8 @@ vecchia_meanzero_loglik_grad_info <- function(covparms, covfun_name, y, X, locs,
 #' NNarray <- find_ordered_nn(locs,20)
 #' #loglik <- vecchia_meanzero_loglik( covparms, "matern_isotropic", y, locs, NNarray )
 #' @export
-vecchia_meanzero_loglik <- function(covparms, covfun_name, y, locs, NNarray) {
-    .Call('_GpGp2_vecchia_meanzero_loglik', PACKAGE = 'GpGp2', covparms, covfun_name, y, locs, NNarray)
+vecchia_meanzero_loglik <- function(covparms, covfun_name, y, locs, NNarray, alpha) {
+    .Call('_GpGp2_vecchia_meanzero_loglik', PACKAGE = 'GpGp2', covparms, covfun_name, y, locs, NNarray, alpha)
 }
 
 #' Grouped Vecchia loglikelihood, gradient, Fisher information
