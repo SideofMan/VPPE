@@ -17,7 +17,7 @@ ppgasp <- function(design, response,trend=matrix(1,dim(response)[1],1),zero.mean
                   b=1/(length(response))^{1/dim(as.matrix(design))[2]}*(a+dim(as.matrix(design))[2]),
                   kernel_type='matern_5_2',isotropic=F,R0=NA,optimization='lbfgs',
                   alpha=rep(1.9,dim(as.matrix(design))[2]),lower_bound=T,max_eval=max(30,20+5*dim(design)[2]),
-                  initial_values=NA,num_initial_values=2,vecchia=F,locs=NA,NNarray=NA){
+                  initial_values=NA,num_initial_values=2,vecchia=F,m=30){
   if (!is.logical(nugget.est) && length(nugget.est) != 1){
     stop("nugget.est should be boolean (either T or F) \n")
   }
@@ -338,13 +338,108 @@ ppgasp <- function(design, response,trend=matrix(1,dim(response)[1],1),zero.mean
                 if(model@nugget.est){
                   UB = c(UB,Inf)
                 }
+                # rescaling throughout optimization
+                max_iter = 2
+
+                # ord = GpGp2::order_maxmin(design)
+                # design.ord = design[ord,]
+                # X.ord = model@X[ord,]
+                # y.ord = model@output[ord,,drop=F]
+                # NNarray = GpGp2::find_ordered_nn(design.ord, m)
+                #
+                # tt_all <- try(nloptr::lbfgs(ini_value, neg_log_marginal_post_approx_ref_ppgasp,
+                #                             nugget=nugget, nugget.est=model@nugget.est,
+                #                             R0=model@R0,X=X.ord, zero_mean=model@zero_mean,output=y.ord, CL=model@CL, a=a,b=b,
+                #                             kernel_type=kernel_type_num,alpha=model@alpha,
+                #                             vecchia=vecchia,locs=design.ord,NNarray=NNarray,lower=model@LB,
+                #                             upper=UB, nl.info = FALSE,
+                #                             control = list(maxeval=max_eval,check_derivatives=F)),FALSE)
+
+                # input.ranges=0.2*apply(design,2,function(x) diff(range(x)))
+                # scales = 1/input.ranges
+                scales = exp(ini_value[1:model@p])
+                ord = GpGp2::order_maxmin(t(t(design)*scales))
+                design.ord = design[ord,,drop=F]
+                y.ord = model@output[ord,,drop=F]
+                X.ord = model@X[ord,,drop=F]
+                NNarray = GpGp2::find_ordered_nn(t(t(design.ord)*scales), m)
+
                 tt_all <- try(nloptr::lbfgs(ini_value, neg_log_marginal_post_approx_ref_ppgasp,
                                             nugget=nugget, nugget.est=model@nugget.est,
-                                            R0=model@R0,X=model@X, zero_mean=model@zero_mean,output=model@output, CL=model@CL, a=a,b=b,
+                                            R0=model@R0,X=X.ord, zero_mean=model@zero_mean,output=y.ord, CL=model@CL, a=a,b=b,
                                             kernel_type=kernel_type_num,alpha=model@alpha,
-                                            vecchia=vecchia,locs=locs,NNarray=NNarray,lower=model@LB,
-                                            upper=UB,
-                                            nl.info = FALSE, control = list(maxeval=max_eval,check_derivatives=F)),FALSE)
+                                            vecchia=vecchia,locs=design.ord,NNarray=NNarray,lower=model@LB,
+                                            upper=UB, nl.info = FALSE,
+                                            control = list(maxeval=max_iter,check_derivatives=F)),FALSE)
+                total_iter = tt_all$iter
+                while(total_iter < max_eval){
+                  if(nugget.est){
+                    scales = exp(tt_all$par)[1:model@p];
+                  }else{
+                    scales = exp(tt_all$par);
+                  }
+                  ord = GpGp2::order_maxmin(t(t(design)*scales))
+                  design.ord = design[ord,,drop=F]
+                  y.ord = model@output[ord,,drop=F]
+                  X.ord = model@X[ord,,drop=F]
+                  NNarray = GpGp2::find_ordered_nn(t(t(design.ord)*scales), m)
+
+                  tt_all <- try(nloptr::lbfgs(tt_all$par, neg_log_marginal_post_approx_ref_ppgasp,
+                                              nugget=nugget, nugget.est=model@nugget.est,
+                                              R0=model@R0,X=X.ord, zero_mean=model@zero_mean,output=y.ord, CL=model@CL, a=a,b=b,
+                                              kernel_type=kernel_type_num,alpha=model@alpha,
+                                              vecchia=vecchia,locs=design.ord,NNarray=NNarray,lower=model@LB,
+                                              upper=UB, nl.info = FALSE,
+                                              control = list(maxeval=min(max_iter,max_eval-total_iter),check_derivatives=F)),FALSE)
+                  total_iter = total_iter + tt_all$iter
+                  max_iter = 2*max_iter
+                }
+                tt_all$iter = total_iter
+                
+                
+                # # subsetting before to estimate rescaling (range par will be estimated without Vecchia when n is small)
+                # sample_ind = sample(1:model@num_obs, 200, replace = F)
+                # design_subset = design[sample_ind,]
+                # X_subset = model@X[sample_ind,]
+                # y_subset = model@output[sample_ind,]
+                # # R0_subset = lapply(model@R0, function(Sigma) Sigma[sample_ind,sample_ind])
+                # # design.ord = NA
+                # # NNarray = NA
+                # 
+                # ord = GpGp2::order_maxmin(design_subset)
+                # design.ord = design_subset[ord,]
+                # X.ord = X_subset[ord,]
+                # y.ord = y_subset[ord,]
+                # NNarray = GpGp2::find_ordered_nn(design.ord, m)
+                # 
+                # tt_all <- try(nloptr::lbfgs(ini_value, neg_log_marginal_post_approx_ref_ppgasp,
+                #                             nugget=nugget, nugget.est=model@nugget.est,
+                #                             R0=R0_subset,X=X_subset, zero_mean=model@zero_mean,output=y_subset, CL=model@CL, a=a,b=b,
+                #                             kernel_type=kernel_type_num,alpha=model@alpha,
+                #                             vecchia=vecchia,locs=design.ord,NNarray=NNarray,lower=model@LB,
+                #                             upper=UB, nl.info = FALSE,
+                #                             control = list(maxeval=max_eval,check_derivatives=F)),FALSE)
+                # cat("Scaling range par: ", 1/exp(tt_all$par), "\n")
+                # 
+                # if(nugget.est){
+                #   scales = exp(tt_all$par)[1:model@p];
+                # }else{
+                #   scales = exp(tt_all$par);
+                # }
+                # ord = GpGp2::order_maxmin(t(t(design)*scales))
+                # design.ord = design[ord,]
+                # y.ord = model@output[ord,]
+                # X.ord = model@X[ord,]
+                # NNarray = GpGp2::find_ordered_nn(t(t(design.ord)*scales), m)
+                # 
+                # tt_all <- try(nloptr::lbfgs(ini_value, neg_log_marginal_post_approx_ref_ppgasp,
+                #                             nugget=nugget, nugget.est=model@nugget.est,
+                #                             R0=model@R0,X=X.ord, zero_mean=model@zero_mean,output=y.ord, CL=model@CL, a=a,b=b,
+                #                             kernel_type=kernel_type_num,alpha=model@alpha,
+                #                             vecchia=vecchia,locs=design.ord,NNarray=NNarray,lower=model@LB,
+                #                             upper=UB, nl.info = FALSE,
+                #                             control = list(maxeval=max_eval,check_derivatives=F)),FALSE)
+                
               }else{
                 tt_all <- try(nloptr::lbfgs(ini_value, neg_log_marginal_post_approx_ref_ppgasp,
                                           neg_log_marginal_post_approx_ref_deriv_ppgasp,
