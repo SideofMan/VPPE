@@ -17,7 +17,7 @@ ppgasp <- function(design, response,trend=matrix(1,dim(response)[1],1),zero.mean
                   b=1/(length(response))^{1/dim(as.matrix(design))[2]}*(a+dim(as.matrix(design))[2]),
                   kernel_type='matern_5_2',isotropic=F,R0=NA,optimization='lbfgs',
                   alpha=rep(1.9,dim(as.matrix(design))[2]),lower_bound=T,max_eval=max(30,20+5*dim(design)[2]),
-                  initial_values=NA,num_initial_values=2,vecchia=F,m=30){
+                  initial_values=NA,num_initial_values=2,vecchia=F,m=NA_integer_){
   if (!is.logical(nugget.est) && length(nugget.est) != 1){
     stop("nugget.est should be boolean (either T or F) \n")
   }
@@ -48,6 +48,7 @@ ppgasp <- function(design, response,trend=matrix(1,dim(response)[1],1),zero.mean
   
   #model <- new("rgasp")
   model <- new("ppgasp")
+  model@m <- as.integer(m)
   
   model@call <- match.call()
   

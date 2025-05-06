@@ -4,7 +4,7 @@
 \alias{vecchia_meanzero_loglik}
 \title{Vecchia's approximation to the Gaussian loglikelihood, zero mean}
 \usage{
-vecchia_meanzero_loglik(covparms, covfun_name, y, locs, NNarray)
+vecchia_meanzero_loglik(covparms, covfun_name, y, locs, NNarray, alpha)
 }
 \arguments{
 \item{covparms}{A vector of covariance parameters appropriate

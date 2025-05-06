@@ -221,6 +221,7 @@ setClass("ppgasp",
            nugget="numeric",                  #####nugget variance ratio 
            nugget.est="logical",         ### nugget is estimated or fixed
            kernel_type="vector",       #####type of kernel to specify
+           m="integer",               ####number of nearest neighbors for Vecchia
            alpha="vector",                 ####roughness parameter in the kernel
            method="character",          ##### post_mode, MLE, MMLE
            isotropic="logical",          ##isotropic or separable kernel

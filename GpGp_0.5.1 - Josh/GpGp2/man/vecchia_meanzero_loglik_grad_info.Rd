@@ -4,7 +4,15 @@
 \alias{vecchia_meanzero_loglik_grad_info}
 \title{Vecchia's approximation to the Gaussian loglikelihood, zero mean, gradient}
 \usage{
-vecchia_meanzero_loglik_grad_info(covparms, covfun_name, y, X, locs, NNarray)
+vecchia_meanzero_loglik_grad_info(
+  covparms,
+  covfun_name,
+  y,
+  X,
+  locs,
+  NNarray,
+  alpha
+)
 }
 \arguments{
 \item{covparms}{A vector of covariance parameters appropriate

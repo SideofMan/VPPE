@@ -26,4 +26,4 @@ LinkingTo: Rcpp, RcppEigen
 NeedsCompilation: yes
 Repository: CRAN
 Packaged: 2024-02-08 19:55:04 UTC; mengyanggu
-RoxygenNote: 5.0.1
+RoxygenNote: 7.3.2

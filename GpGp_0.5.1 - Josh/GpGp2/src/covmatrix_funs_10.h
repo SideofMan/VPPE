@@ -190,7 +190,8 @@ arma::cube d_matern25_isotropic(arma::vec covparms, arma::mat locs ){
 //' The covariance parameter vector is (variance, range_1, ..., range_d, nugget).
 //' The covariance function is parameterized as
 //' \deqn{ M(x_i,y_j) = \sigma^2 \prod_{l=1}^p (1 + \sqrt{5}|| \lambda_l^{-1}(x_{il} - y_{jl}) || + 5|| \lambda_l(x_{il} - y_{jl}) ||^{2}/3 ) exp( - \sqrt{5}|| \lambda_l^{-1}(x_{il} - y_{jl}) || ) }
-//' where \eqn{ \boldysymbol{\lambda} } is a vector of range parameters \eqn{ (\lambda_1, ..., \lambda_p) } on the diagonals.//' The nugget value \eqn{ \sigma^2 \tau^2 } is added to the diagonal of the covariance matrix.
+//' where \eqn{ \boldsymbol{\lambda} } is a vector of range parameters \eqn{ (\lambda_1, ..., \lambda_p) }.
+//' The nugget value \eqn{ \sigma^2 \tau^2 } is added to the diagonal of the covariance matrix.
 //' NOTE: the nugget is \eqn{ \sigma^2 \tau^2 }, not \eqn{ \tau^2 }. 
 // [[Rcpp::export]]
 arma::mat matern25_scaledim(arma::vec covparms, arma::mat locs ){

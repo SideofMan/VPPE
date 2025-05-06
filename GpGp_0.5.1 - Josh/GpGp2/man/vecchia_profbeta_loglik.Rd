@@ -5,7 +5,7 @@
 \title{Vecchia's approximation to the Gaussian loglikelihood, with profiled 
 regression coefficients.}
 \usage{
-vecchia_profbeta_loglik(covparms, covfun_name, y, X, locs, NNarray)
+vecchia_profbeta_loglik(covparms, covfun_name, y, X, locs, NNarray, alpha)
 }
 \arguments{
 \item{covparms}{A vector of covariance parameters appropriate

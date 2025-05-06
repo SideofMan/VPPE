@@ -98,13 +98,9 @@ the number of initial values of the kernel parameters in optimization.
   \item{vecchia}{
   boolean value. \code{T} means we should use the Vecchia approximation, \code{F} means we do not use the Vecchia approximation.
   }
-  \item{locs}{
-  A matrix with \code{n} rows and \code{d} columns, used for the Vecchia approximation. Each row of locs is a point in R^d.
+  \item{m}{
+  An integer for the number of nearest neighbors \code{m} used in the Vecchia approximation.
   }
-  \item{NNarray}{A matrix of indices, usually the output from \code{\link{find_ordered_nn}}.
-  Row \code{i} contains the indices
-  of the observations that observation \code{i} conditions on. By convention,
-  the first element of row \code{i} is \code{i}.}
 }
 %\details{
 %%  ~~ If necessary, more details than the description above ~~
