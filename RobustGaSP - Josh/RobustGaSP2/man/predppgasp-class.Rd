@@ -13,6 +13,7 @@ Objects of this class are created and initialized with the function \code{\link{
     \item{\code{lower95}:}{lower bound of the 95\% posterior credible interval.}
     \item{\code{upper95}:}{upper bound of the 95\% posterior credible interval.}
     \item{\code{sd}:}{standard deviation of each \code{testing_input}.}
+    \item{\code{m_pred}:}{number of nearest neighbors in prediction.}
   }
 }
 

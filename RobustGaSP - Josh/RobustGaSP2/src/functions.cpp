@@ -1744,7 +1744,7 @@ Eigen::VectorXd log_profile_lik_deriv_ppgasp(const Eigen::VectorXd & param,doubl
 // [[Rcpp::export]]
 List construct_ppgasp(const Eigen::VectorXd & beta,const double nu,  const List R0, const Eigen::Map<Eigen::MatrixXd> & X,const  String zero_mean,const Eigen::Map<Eigen::MatrixXd> & output,const Eigen::VectorXi & kernel_type,const Eigen::VectorXd & alpha){
   List list_return(4);
-  
+
   //similar to marginal likelihood
   //////// VectorXd beta= param.array().exp().matrix();
   int num_obs=output.rows();
@@ -1772,13 +1772,11 @@ List construct_ppgasp(const Eigen::VectorXd & beta,const double nu,  const List 
   }else{
     int q=X.cols();
     MatrixXd R_inv_X=L.transpose().triangularView<Upper>().solve(L.triangularView<Lower>().solve(X)); //one forward and one backward to compute R.inv%*%X
-    MatrixXd Xt_R_inv_X=X.transpose()*R_inv_X; //Xt%*%R.inv%*%X
-    
+    MatrixXd Xt_R_inv_X = X.transpose()*R_inv_X; //Xt%*%R.inv%*%X
     LLT<MatrixXd> lltOfXRinvX(Xt_R_inv_X); // cholesky decomposition of Xt_R_inv_X called lltOfXRinvX
     MatrixXd LX = lltOfXRinvX.matrixL();  //  retrieve factor LX  in the decomposition 
     list_return[1]=LX; //second element to return
-    
-    MatrixXd yt_R_inv= (L.transpose().triangularView<Upper>().solve(L.triangularView<Lower>().solve(output))).transpose(); 
+    MatrixXd yt_R_inv= (L.transpose().triangularView<Upper>().solve(L.triangularView<Lower>().solve(output))).transpose();
     MatrixXd Xt_R_inv_y= X.transpose()*yt_R_inv.transpose();
     MatrixXd theta_hat=LX.transpose().triangularView<Upper>().solve(LX.triangularView<Lower>().solve(Xt_R_inv_y)); 
     list_return[2]=theta_hat;

@@ -17,7 +17,7 @@ ppgasp <- function(design, response,trend=matrix(1,dim(response)[1],1),zero.mean
                   b=1/(length(response))^{1/dim(as.matrix(design))[2]}*(a+dim(as.matrix(design))[2]),
                   kernel_type='matern_5_2',isotropic=F,R0=NA,optimization='lbfgs',
                   alpha=rep(1.9,dim(as.matrix(design))[2]),lower_bound=T,max_eval=max(30,20+5*dim(design)[2]),
-                  initial_values=NA,num_initial_values=2,vecchia=F,m=NA_integer_){
+                  initial_values=NA,num_initial_values=2,vecchia=F,m=NA_integer_,NN_predict=F){
   if (!is.logical(nugget.est) && length(nugget.est) != 1){
     stop("nugget.est should be boolean (either T or F) \n")
   }
@@ -49,6 +49,7 @@ ppgasp <- function(design, response,trend=matrix(1,dim(response)[1],1),zero.mean
   #model <- new("rgasp")
   model <- new("ppgasp")
   model@m <- as.integer(m)
+  model@NN_predict = NN_predict
   
   model@call <- match.call()
   
@@ -652,17 +653,19 @@ ppgasp <- function(design, response,trend=matrix(1,dim(response)[1],1),zero.mean
     model@nugget=nugget
   }
   
-  list_return=construct_ppgasp(model@beta_hat, model@nugget, model@R0, model@X, zero_mean=model@zero_mean,
-                              model@output,kernel_type_num,model@alpha); 
-  model@L=list_return[[1]];
-  model@LX=list_return[[2]];
-  model@theta_hat=list_return[[3]];
-  #model@sigma2_hat=list_return[[4]];
-  if( (method=='post_mode') | (method=='mmle') ){
-    model@sigma2_hat=list_return[[4]];
-  }else if (method=='mle'){
-    if(model@q>0){
-      model@sigma2_hat=list_return[[4]]*(model@num_obs-model@q)/model@num_obs;
+  if(!vecchia | NN_predict == FALSE){
+    list_return=construct_ppgasp(model@beta_hat, model@nugget, model@R0, model@X, zero_mean=model@zero_mean,
+                                 model@output,kernel_type_num,model@alpha); 
+    model@L=list_return[[1]];
+    model@LX=list_return[[2]];
+    model@theta_hat=list_return[[3]];
+    #model@sigma2_hat=list_return[[4]];
+    if( (method=='post_mode') | (method=='mmle') ){
+      model@sigma2_hat=list_return[[4]];
+    }else if (method=='mle'){
+      if(model@q>0){
+        model@sigma2_hat=list_return[[4]]*(model@num_obs-model@q)/model@num_obs;
+      }
     }
   }
   

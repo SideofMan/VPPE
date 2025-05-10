@@ -32,6 +32,7 @@ Objects of this class are created and initialized with the function \code{\link{
     \item{\code{nugget.est}:}{A \code{logical} object of whether the nugget is estimated (T) or fixed (F).}
     \item{\code{kernel_type}:}{A \code{vector} of \code{character} to specify the type of kernel to use.}
     \item{\code{m}:}{Object of class \code{integer}. The number of nearest neighbors used for Vecchia approximation. \code{NA_integer_} if Vecchia approximation is not used.}
+    \item{\code{NN_predict}:}{A \code{logical} object of whether the user plans on using nearest neighbors to predict or not.}
     \item{\code{alpha}:}{Object of class \code{vector} with dimension p x 1 for the roughness parameters in the kernel.}
             \item{\code{method}:}{Object of class \code{character} to specify the method of parameter estimation. There are three values: \code{post_mode}, \code{mle} and \code{mmle}.}
         \item{\code{isotropic}:}{Object of class \code{logical} to specify whether the kernel is isotropic. }

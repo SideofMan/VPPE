@@ -222,6 +222,7 @@ setClass("ppgasp",
            nugget.est="logical",         ### nugget is estimated or fixed
            kernel_type="vector",       #####type of kernel to specify
            m="integer",               ####number of nearest neighbors for Vecchia
+           NN_predict="logical",      ####planning on predicting with nearest neighbors or not
            alpha="vector",                 ####roughness parameter in the kernel
            method="character",          ##### post_mode, MLE, MMLE
            isotropic="logical",          ##isotropic or separable kernel
@@ -251,7 +252,8 @@ setClass("predppgasp",
            mean = "matrix",          ## the mean value of the prediction
            lower95 = "matrix",       ## the lower 95 bound of the prediction
            upper95 = "matrix",       ## the upper 95 bound of the prediction
-           sd = "matrix"             ## the standard deviation of the prediction
+           sd = "matrix",             ## the standard deviation of the prediction
+           m_pred = "integer"        ## number of nearest neighbors used for prediction if used
          )
 )
 
@@ -259,7 +261,7 @@ setMethod("as.S3prediction", "predppgasp",
           definition = function(object)
           {
             structure(list(mean = object@mean, lower95 = object@lower95, 
-                           upper95 = object@upper95, sd = object@sd), class = "predppgasp")
+                           upper95 = object@upper95, sd = object@sd, m_pred = object@m_pred), class = "predppgasp")
           }
 )
 
@@ -280,10 +282,10 @@ setMethod("show", "ppgasp",
 
 setMethod("predict", "ppgasp",
           definition=function(object, testing_input, testing_trend=matrix(1,dim(testing_input)[1],1),
-                              r0=NA, 
+                              r0=NA, m_pred=NA_integer_,
                               interval_data=T,
                               outasS3 = T, loc_index=NA,...) {
-            predict.ppgasp(object = object, testing_input = testing_input,r0=r0, 
+            predict.ppgasp(object = object, testing_input = testing_input,r0=r0,m_pred=m_pred, 
                            interval_data=interval_data,
                           testing_trend=testing_trend, outasS3 = outasS3,loc_index=loc_index,...)
           }
