@@ -196,11 +196,13 @@ predict.ppgasp <- function (object, testing_input, testing_trend= matrix(1,dim(t
     output.lower95 = matrix(0,nrow(testing_input),ncol(object@output))
     output.sd = matrix(0,nrow(testing_input),ncol(object@output))
     
-    NN = FNN::get.knnx(save_object@input, testing_input, k=m_pred)
+    NN = FNN::get.knnx(t(t(save_object@input)*object@beta_hat), t(t(testing_input)*object@beta_hat), k=m_pred)
     
     for(i_n_pred in 1:nrow(testing_input)){
       r0 <- save_r0
-      Sys.sleep(0.01)
+      if(!is.na(r0)[1]){
+        r0 = lapply(r0, function(mat) mat[i_n_pred,])
+      }
       testing_input_i = testing_input[i_n_pred,,drop=F]
       testing_trend_i = testing_trend[i_n_pred,,drop=F]
       NN_ind = NN$nn.index[i_n_pred,]
@@ -320,7 +322,6 @@ predict.ppgasp <- function (object, testing_input, testing_trend= matrix(1,dim(t
                               testing_input_i,testing_trend_i,temp_object@L,temp_object@LX,theta_hat_pred_loc,
                               temp_object@sigma2_hat[pred_loc_index],qn_025,qn_975,r0,kernel_type_num,temp_object@alpha,temp_object@method,interval_data)
       }
-      
       output.mean[i_n_pred,] = pred_list[[1]]
       output.lower95[i_n_pred,] = pred_list[[2]]
       output.upper95[i_n_pred,] = pred_list[[3]]
