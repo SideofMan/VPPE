@@ -6,11 +6,13 @@
 }
 \description{
 %%  ~~ A concise (1-5 lines) description of what the function does. ~~
-Natural logarithm of marginal posterior density with the jointly robust prior of inverse range parameter of the PP GaSP model after marginalizing out the mean (trend) and variance parameters  by the location-scale prior.
+Natural logarithm of marginal posterior density with the jointly robust prior of inverse range parameter of the PP GaSP model after marginalizing out the mean (trend) and variance parameters  by the location-scale prior. 
+If using the Vecchia approximation, this function outputs both the natural logarithm of the marginal posterior density value as well as its gradient.
 }
 \usage{
 neg_log_marginal_post_approx_ref_ppgasp(param, nugget, 
-nugget.est, R0, X, zero_mean,output, CL, a, b,kernel_type, alpha)
+nugget.est, R0, X, zero_mean,output, CL, a, b,kernel_type, alpha,
+vecchia=F,locs=NA,NNarray=NA)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -65,6 +67,18 @@ In each coordinate of the vector, 1 means the \code{pow_exp} kernel with roughne
   \item{alpha}{
 %%     ~~Describe \code{alpha} here~~
 Roughness parameters in the kernel functions.
+}
+\item{vecchia}{
+%%     ~~Describe \code{vecchia} here~~
+boolean value. \code{T} means we should use the Vecchia approximation, \code{F} means we do not use the Vecchia approximation.
+}
+\item{locs}{
+  A matrix with \code{n} rows and \code{d} columns, used for the Vecchia approximation. Each row of locs is a point in R^d.
+}
+\item{NNarray}{A matrix of indices, usually the output from \code{\link{find_ordered_nn}}.
+Row \code{i} contains the indices
+of the observations that observation \code{i} conditions on. By convention,
+the first element of row \code{i} is \code{i}.
 }
 }
 %\details{

@@ -329,10 +329,24 @@ neg_log_marginal_post_approx_ref_deriv_ppgasp<- function(param,nugget,nugget.est
     }else{
       rp=c(rp[1:(length(param)-1)], exp(param[length(param)]))
     }
+    if(length(unique(kernel_type)) > 1){
+      stop("Vecchia method requires the same kernel across input parameters.")
+    } else {
+      k_type = unique(kernel_type)
+      if(k_type == 1){
+        kernel_type_vecchia = "pow_exp"
+      } else if (k_type == 2){
+        kernel_type_vecchia = "matern15_scaledim"
+      } else if (k_type == 3){
+        kernel_type_vecchia = "matern25_scaledim"
+      } else {
+        kernel_type_vecchia = "matern25_scaledim"
+      }
+    }
     if(zero_mean == "Yes"){
-      lml_dev=GpGp4RG::vecchia_meanzero_loglik_grad_info(c(var_y,rp),"matern15_scaledim",output,X,locs,NNarray)$grad[2:(1+length(param))]
+      lml_dev=GpGp4RG::vecchia_meanzero_loglik_grad_info(c(var_y,rp),kernel_type_vecchia,output,X,locs,NNarray)$grad[2:(1+length(param))]
     }else if(zero_mean == "No"){
-      lml_dev=GpGp4RG::vecchia_profbeta_loglik_grad_info(c(var_y,rp),"matern15_scaledim",output,X,locs,NNarray)$grad[2:(1+length(param))]
+      lml_dev=GpGp4RG::vecchia_profbeta_loglik_grad_info(c(var_y,rp),kernel_type_vecchia,output,X,locs,NNarray)$grad[2:(1+length(param))]
     }
     # GpGp4RG computes the gradient with respect to range.par not inverse range.par
     # as a result, we need to multiply by (-range.par^2) to cancel out the chain rule

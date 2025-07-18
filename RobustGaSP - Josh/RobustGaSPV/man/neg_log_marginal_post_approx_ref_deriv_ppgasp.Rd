@@ -12,7 +12,8 @@ The function computes the derivative (with regard to log of inverse range parame
 \usage{
 neg_log_marginal_post_approx_ref_deriv_ppgasp(param, nugget, nugget.est, 
                                        R0, X, zero_mean,output, CL, a, b, 
-                                      kernel_type, alpha)
+                                      kernel_type, alpha,
+                                      vecchia=F,locs=NA,NNarray=NA,vecchia_gradient=NA)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{

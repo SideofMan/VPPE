@@ -18,7 +18,8 @@ Setting up the parallel partial GaSP model for estimating the parameters (if the
     kernel_type='matern_5_2',isotropic=F,R0=NA,
     optimization='lbfgs',
     alpha=rep(1.9,dim(as.matrix(design))[2]),lower_bound=T,
-    max_eval=max(30,20+5*dim(design)[2]),initial_values=NA,num_initial_values=2)
+    max_eval=max(30,20+5*dim(design)[2]),initial_values=NA,num_initial_values=2,
+    vecchia=F,m=NA_integer_,NN_predict=F)
  % \S4method{show}{rgasp}(object)    
 }
 %- maybe also 'usage' for other objects documented here.
@@ -99,7 +100,10 @@ the number of initial values of the kernel parameters in optimization.
   boolean value. \code{T} means we should use the Vecchia approximation, \code{F} means we do not use the Vecchia approximation.
   }
   \item{m}{
-  An integer for the number of nearest neighbors \code{m} used in the Vecchia approximation.
+  An integer for the number of nearest neighbors \code{m} used in the Vecchia approximation. The default value is \code{NA} (used when there is no Vecchia approximation). We recommend using a default value of 30 when using the Vecchia approximation.
+  }
+  \item{NN_predict}{
+  boolean value. \code{T} means that we plan on performing nearest neighbors when predicting, and will not run the \code{construct_ppgasp} function at the end.
   }
 }
 %\details{

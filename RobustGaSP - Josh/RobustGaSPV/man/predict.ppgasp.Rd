@@ -29,6 +29,7 @@ outasS3 = T,loc_index=NA, ...)
       specified by the user. If specified by user, it is either a 
       \code{matrix} or \code{list}. The default value is \code{NA}.
     }
+  \item{m_pred}{The number of nearest neighbors to be used in Vecchia prediction. The default value is \code{NA}.}
 \item{interval_data}{
    a boolean value. If \code{T}, the interval of the data will be   
    calculated. Otherwise, the interval of the mean of the data will 
