@@ -1,0 +1,281 @@
+---
+format:
+  pdf:
+    keep-tex: true
+    indent: false
+    include-in-header: 
+      text: 
+        \addtokomafont{subsection}{\color{blue}\nobreak}
+pdf-engine: xelatex
+execute: 
+  echo: true
+  output: true
+  warning: false
+  error: false
+number-sections: false
+fig-dpi: 600
+highlight-style: zenburn
+tab-stop: 4
+include-in-header: 
+  text: 
+    \newcommand{\var}{\mathrm{Var}}
+    \newcommand{\cov}{\mathrm{Cov}}
+    \newcommand{\R}{\mathbb{R}}
+    \newcommand{\B}[1]{\hat{\beta}_{#1}}
+    \usepackage{enumitem}
+    \usepackage{tikz}
+    \usepackage{pgfplots}
+    \usepackage{ifthen}
+    \usepackage[hang,flushmargin]{footmisc}
+    \pgfplotsset{compat=1.18}
+    \usetikzlibrary{calc,snakes,arrows,shapes}
+editor_options: 
+  chunk_output_type: inline
+editor: 
+  markdown: 
+    wrap: 72
+---
+
+```{r packages, echo=FALSE}
+library(GpGp4RG)
+library(RobustGaSPV)
+library(tictoc)
+library(plotly)
+library(rhdf5)
+library(dplyr)
+library(tidyr)
+library(lhs)
+library(latex2exp)
+library(gridExtra)
+```
+
+```{=latex}
+\newcommand{\var}{\mathrm{Var}}
+\newcommand{\cov}{\mathrm{Cov}}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\B}[1]{\hat{\beta}_{#1}}
+```
+Scaled Vecchia + Parallel Partial Emulation Demo \hfill Josh Seidman
+
+\hrulefill
+
+The Vecchia/Scaled Vecchia approximation methods are able to handle datasets with a large number of runs (large $n$). The PPE method is able to handle datasets with a large number of output dimensions (large $k$). The VPPE method makes tractable the class of problems which have a large number of runs along with a large number of output dimensions (both large $n$ and $k$).
+
+In this demonstration, we allow the user to reproduce Figure 1 from our paper. Note that this demo is slightly modified from the code that produced Figure 1 to allow for a faster overall time to produce the results/plots.
+
+Here we simulate a Gaussian Process with with random Latin Hypercube sampling to produce our design $\mathbf{x}^\mathcal{D}$. We use the Matérn 3/2 covariance function to generate the covariance matrix and subsequently the output data. Further details can be found in the paper.
+
+For this experiment, we will fix the range parameters of our four dimensional inputs ($p=4$) to be $(0.5,0.8,1.2,0.3)$. We also fix the number of output dimensions to be $k=100$, and choose $\sigma^2=1$. In this demo and in the paper we chose the number of nearest neighbors in the Vecchia approximation to be $m=30$, since we observed this to be a good balance of efficiency and accuracy.
+
+For each $n$, we simulate a $2n \times p$ design matrix $\mathbf{x}^\mathcal{D}$, and a $2n \times k$ output matrix $\mathbf{y}^\mathcal{D}$. We then split the data into $n$ training runs and $n$ testing runs and fit a PPE emulator and a VPPE emulator to record the fit times along with the RMSE between the predicted mean output with the test output data.
+
+In the paper we varied $n=100,200,\dots,4000$. This takes a long time to run, so in this demo we vary $n=100,200,\dots,1000,1500,\dots,4000$. Additionally, we have fixed the seed and saved the PPE data which takes much longer than VPPE, allowing the user to reproduce the figures without rerunning the computationally intensive code
+
+```{r, echo = FALSE}
+# helper function
+generate_data <- function(p=4,n=1e3,k=1e2,zeromean="No",train=T,
+                          range.par=c(0.5,0.8,1.2,0.3)){
+  if(!train){
+    sim_X = randomLHS(n = n, k = p)
+    sim_rp = range.par[1:p]
+    sim_S_v = matern15_scaledim(c(1,sim_rp,0),sim_X)
+    sim_L = chol(sim_S_v)
+    
+    sim_y = matrix(0,n,k)
+    sim_y[,1] = t(sim_L)%*%matrix(rnorm(nrow(sim_X)))
+    # sim_y[,1] = sin(2*pi*1*col1) + 0.01*rnorm(n)
+    if(k > 1){
+      for(loc_i in 2:k){
+        sim_y[,loc_i] = t(sim_L)%*%matrix(rnorm(nrow(sim_X)))
+      }
+    }
+    
+    inputs = sim_X
+    zeromean = "No"
+    if(zeromean == "Yes"){
+      y = apply(sim_y,2,function(x){x - mean(x)})
+    }else{
+      y = sim_y
+    }
+  }else{
+    sim_X = randomLHS(n = 2*n, k = p)
+    sim_rp = range.par[1:p]
+    sim_S_v = matern15_scaledim(c(1,sim_rp,0),sim_X)
+    sim_L = chol(sim_S_v)
+    
+    sim_y = matrix(0,2*n,k)
+    sim_y[,1] = t(sim_L)%*%matrix(rnorm(nrow(sim_X)))
+    # sim_y[,1] = sin(2*pi*1*col1) + 0.01*rnorm(n)
+    if(k > 1){
+      for(loc_i in 2:k){
+        sim_y[,loc_i] = t(sim_L)%*%matrix(rnorm(nrow(sim_X)))
+      }
+    }
+    
+    inputs = sim_X
+    zeromean = "No"
+    if(zeromean == "Yes"){
+      y = apply(sim_y,2,function(x){x - mean(x)})
+    }else{
+      y = sim_y
+    }
+  }
+  
+  X = inputs
+  trend = cbind(matrix(1,nrow = nrow(X),ncol = 1), X)
+  alpha = rep(2,dim(as.matrix(X))[2])
+  
+  if(!train){
+    result = list("X"=X,"y"=y,"trend"=trend,"alpha"=alpha,"zeromean"=zeromean)
+  }else{
+    result = list("train_X"=X[1:n,],"train_y"=y[1:n,],"train_trend"=trend[1:n,],
+                  "test_X"=X[(n+1):(2*n),],"test_y"=y[(n+1):(2*n),],"test_trend"=trend[(n+1):(2*n),],
+                  "alpha"=alpha,"zeromean"=zeromean)
+  }
+  
+  # list2env(result, .GlobalEnv)
+  return(result)
+}
+```
+Now we will generate the data with a set seed of 05282016. The `VPPE_demo.Rdata` file will import all the datasets, but if you choose to generate it yourself this will take approximately 8-10 minutes.
+```{r}
+set.seed(05282016)
+load_data = F
+if(load_data){
+  load("VPPE_demo.RData")
+  # removing VPPE runtimes and models
+  runtimes[2,] = 0
+  n = c(seq(100,1000,100),seq(1500,4000,500))
+  VPPE_matrix = vector(mode = "list",length(n)) # object for storing VPPE models
+} else {
+  n = c(seq(100,200,100))
+  data = vector(mode = "list", length = length(n))
+  for(i_n in 1:length(n)){
+    data[[i_n]] = generate_data(p = 4, n = n[i_n], k = 100, zeromean = "No", train = T,
+                                range.par = c(0.5,0.8,1.2,0.3))
+  }
+}
+```
+Now we will fit the models. The PPE models have already been fit and are imported in the `VPPE_demo.RData` file since they take a while. If you would like to fit them yourself you can comment out the line that does that below.
+```{r, include=FALSE}
+if(!load_data){ # if the data was not loaded above, set up objects needed for figure
+  kernel_type = 'matern_3_2' # setting the kernel for models to the Matérn 3/2 function
+  runtimes = matrix(0,2,length(n)) # object for storing PPE and VPPE runtimes (row 1 is PPE)
+  PPE_matrix = vector(mode = "list",length(n)) # object for storing PPE models
+  VPPE_matrix = vector(mode = "list",length(n)) # object for storing VPPE models
+}
+
+fit_PPE = T
+for(i in 1:length(n)){
+  list2env(data[[i]], .GlobalEnv)
+  
+  # PPE fitting ---- assign fit_PPE = F to skip this step
+  if(fit_PPE){
+    tic()
+    PPE = ppgasp(train_X,train_y,trend = train_trend, kernel_type = kernel_type, nugget = 0, 
+                     nugget.est = T, zero.mean = zeromean)
+    toc_PPE=toc(log=T)
+    runtimes[1,i] = as.numeric(toc_PPE$toc-toc_PPE$tic)
+    PPE_matrix[[i]] = PPE
+  }
+  
+  # VPPE fitting
+  tic()
+  VPPE = ppgasp(train_X,train_y,trend = train_trend, kernel_type = kernel_type, nugget = 0,
+                  nugget.est = T, zero.mean = zeromean,
+                  vecchia = T, m = 30)
+  toc_VPPE = toc(log=T)
+  runtimes[2,i] = as.numeric(toc_VPPE$toc-toc_VPPE$tic)
+  VPPE_matrix[[i]] = VPPE
+}
+```
+First we create a data frame with the runtimes.
+```{r}
+#----create data frame and put in fitting times----
+runtimes_df = data.frame("n" = n, "PPE_times" = runtimes[1,], "VPPE_times" = runtimes[2,])
+runtimes_df_long = pivot_longer(runtimes_df, cols = c(PPE_times, VPPE_times),
+                              names_to = "Method", values_to = "Runtime")
+```
+
+We can now predict on the testing data and compare it to the simulated testing output data.
+```{r}
+#----create a data frame, predict and put in RMSE
+RMSE_df = data.frame("n" = n, "PPE_RMSE" = numeric(length(n)), "VPPE_RMSE" = numeric(length(n)))
+predict_times_df = data.frame("n" = n, "PPE_pred_time" = numeric(length(n)), "VPPE_pred_time" = numeric(length(n)))
+for(i in 1:length(n)){
+  list2env(data[[i]], .GlobalEnv)
+  PPE = PPE_matrix[[i]]
+  VPPE = VPPE_matrix[[i]]
+  
+  tic()
+  PPE_predict = predict.ppgasp(PPE, test_X, test_trend)
+  toc_PPE=toc(log=T)
+  predict_times_df$PPE_pred_time[i] = as.numeric(toc_PPE$toc-toc_PPE$tic)
+  
+  tic()
+  VPPE_predict = predict.ppgasp(VPPE, test_X, test_trend)
+  toc_VPPE=toc(log=T)
+  predict_times_df$VPPE_pred_time[i] = as.numeric(toc_VPPE$toc-toc_VPPE$tic)
+  
+  RMSE_PPE = sqrt(mean((PPE_predict$mean - test_y)^2))
+  RMSE_VPPE = sqrt(mean((VPPE_predict$mean - test_y)^2))
+  
+  RMSE_df$PPE_RMSE[i] = RMSE_PPE
+  RMSE_df$VPPE_RMSE[i] = RMSE_VPPE
+  cat("Prediction ",i,"/",length(n),"completed.\n")
+}
+RMSE_df_long = pivot_longer(RMSE_df, cols = c(PPE_RMSE, VPPE_RMSE),
+                              names_to = "Method", values_to = "RMSE")
+predict_times_df_long = pivot_longer(predict_times_df, cols = c(PPE_pred_time, VPPE_pred_time),
+                              names_to = "Method", values_to = "pred_time")
+df = cbind(runtimes_df_long, RMSE_df_long$RMSE, predict_times_df_long$pred_time)
+df = rename(df,all_of(c("RMSE"="RMSE_df_long$RMSE", "pred_times" = "predict_times_df_long$pred_time")))
+df$Method <- factor(df$Method,
+                          levels = c("PPE_times", "VPPE_times"),
+                          labels = c("PPE", "VPPE"))
+```
+As $n$ grows, the time for prediction increases but remains negligible when compared to the fitting time (a maximum of about 0.27% for PPE and a maximum of about 6.6% for VPPE). Additionally, there is no difference between the PPE and VPPE methods when it comes to prediction. The following plots will be including only the fitting time.
+```{r}
+fontsize = 30
+fontsize2 = 20
+
+p1 <- ggplot(data=df, aes(x = Runtime, y = RMSE, color = Method)) +
+  geom_line(linewidth = 1) +  
+  geom_point(size = 2) + 
+  scale_x_continuous(trans = "log10", limits = c(min(df$Runtime),1.1e4)) +
+  scale_y_continuous(trans = "log10", limits = c(1.5e-2,5e-1)) +
+  labs(x = "Runtime to fit emulator (seconds)", y = "RMSE") +
+  scale_color_manual(values = c("PPE" = "red", "VPPE" = "blue"),
+                     labels = c("PPE" = "PPE", "VPPE" = "VPPE"),
+                     name = NULL) +
+  theme_minimal() +
+  theme(plot.title=element_text(hjust=0.5),
+        axis.title.x = element_text(size=fontsize),
+        axis.title.y = element_text(size=fontsize),
+        axis.text.x = element_text(size=fontsize2),
+        axis.text.y = element_text(size=fontsize2),
+        legend.text=element_text(size=fontsize)) +
+  theme(legend.position = "none")
+
+p2 <- ggplot(data=df, aes(x = n, y = Runtime, color = Method)) +
+  geom_line(linewidth = 1) +  
+  geom_point(size = 2) + 
+  scale_x_continuous(breaks = c(100,seq(500,4000,500)),
+                     labels = c("0.1","0.5","1","1.5","2","2.5","3","3.5","4")) +
+  scale_y_continuous(trans = "log10", breaks = 10^(0:4), limits = c(0.7,1.5e4)) +
+  labs(x = TeX("Size of training set ($\\times 10^3$)"), y = "Runtime to fit emulator") +
+  scale_color_manual(values = c("PPE" = "red", "VPPE" = "blue"),
+                     labels = c("PPE" = "PPE", "VPPE" = "VPPE"),
+                     name = NULL) +
+  theme_minimal() +
+  theme(plot.title=element_text(hjust=0.5),
+        axis.title.x = element_text(size=fontsize),
+        axis.title.y = element_text(size=fontsize),
+        axis.text.x = element_text(size=fontsize2),
+        axis.text.y = element_text(size=fontsize2),
+        legend.text=element_text(size=fontsize))
+
+p1
+p2
+```
+In the first plot we can see VPPE's computational complexity advantage over PPE while performing on the same level of accuracy. In the second plot we can see that as the training data increases, PPE's fitting times get long very quick, while VPPE's fitting times increase slowly.
